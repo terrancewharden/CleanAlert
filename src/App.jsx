@@ -43,6 +43,12 @@ const CSS = `
   .deal-enter   { animation: slide-in-right 0.45s ease; }
   .pulse-express { animation: pulse-ring 1.4s ease 3; }
   .pulse-deal    { animation: pulse-gold 1.6s ease 2; }
+
+  @media (max-width: 480px) {
+    .tab-full  { display: none !important; }
+    .tab-short { display: inline !important; }
+    .form-row-2 { grid-template-columns: 1fr !important; }
+  }
 `;
 
 // ─── SEED DATA — Incoming Contracts ───────────────────────────────────────────
@@ -217,7 +223,7 @@ function DealBadge({ deal, isNew }) {
 }
 
 // ─── CLAIMED DEALS SIDEBAR ─────────────────────────────────────────────────────
-function DealsSidebar({ deals }) {
+function DealsSidebar({ deals, isMobile }) {
   return (
     <div style={{
       width: "100%",
@@ -225,7 +231,7 @@ function DealsSidebar({ deals }) {
     }}>
       {/* Header */}
       <div style={{
-        position: "sticky", top: 60, zIndex: 10,
+        position: "sticky", top: isMobile ? 108 : 60, zIndex: 10,
         background: SURFACE2,
         padding: "16px 16px 12px",
         borderBottom: `1px solid ${BORDER}`,
@@ -250,7 +256,7 @@ function DealsSidebar({ deals }) {
         padding: "12px",
         display: "flex", flexDirection: "column", gap: 10,
         overflowY: "auto",
-        maxHeight: "calc(100vh - 160px)",
+        maxHeight: isMobile ? "none" : "calc(100vh - 160px)",
       }}>
         {[...deals].reverse().map((deal, i) => (
           <DealBadge key={deal.id} deal={deal} isNew={i === 0 && deal.isNew} />
@@ -480,7 +486,7 @@ function BuyerView({ onPost }) {
   };
 
   const Row2 = ({ children }) => (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>{children}</div>
+    <div className="form-row-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>{children}</div>
   );
 
   return (
@@ -570,7 +576,9 @@ function BuyerView({ onPost }) {
 function CleanerView({ cards, deals, onExpressInterest, onSkip }) {
   const [modal,     setModal]     = useState(null);
   const [showAlert, setShowAlert] = useState(false);
+  const [dealTab,   setDealTab]   = useState(false); // mobile toggle
   const prevLen = useRef(cards.length);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (cards.length > prevLen.current) {
@@ -581,72 +589,94 @@ function CleanerView({ cards, deals, onExpressInterest, onSkip }) {
   }, [cards.length]);
 
   return (
-    <div style={{ display: "flex", minHeight: "calc(100vh - 60px)" }}>
+    <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", minHeight: "calc(100vh - 60px)" }}>
 
-      {/* ── LEFT: Feed ───────────────────────────────────────────────────── */}
-      <div style={{ flex: 1, minWidth: 0, padding: "28px 20px" }}>
-        {/* Alert banner */}
-        {showAlert && (
-          <div className="alert-banner" style={{
-            background: `${CYAN}12`, border: `1px solid ${CYAN}`,
-            borderRadius: 10, padding: "11px 16px", marginBottom: 16,
-            display: "flex", alignItems: "center", gap: 10,
-            color: CYAN, fontWeight: 700, fontSize: 13,
-          }}>
-            <span style={{
-              width: 9, height: 9, borderRadius: "50%", background: CYAN,
-              flexShrink: 0, animation: "pulse-ring 1s ease 3",
-              display: "inline-block",
-            }} />
-            New contract posted in your area — be the first to respond.
-          </div>
-        )}
-
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em" }}>Incoming Alerts</div>
-            <div style={{ color: "#6a8aaa", fontSize: 13, marginTop: 3 }}>
-              {cards.length} active contract{cards.length !== 1 ? "s" : ""} near you
-            </div>
-          </div>
-          <div style={{
-            background: SURFACE, border: `1px solid ${BORDER}`,
-            borderRadius: 8, padding: "5px 12px",
-            fontSize: 10, fontWeight: 700, color: "#6a8aaa",
-            textTransform: "uppercase", letterSpacing: "0.06em",
-          }}>
-            Live Feed
-          </div>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {cards.length === 0 && (
-            <div style={{ textAlign: "center", padding: "50px 0", color: "#2a4a6f", fontSize: 13 }}>
-              No active contracts right now. Check back shortly.
-            </div>
-          )}
-          {[...cards].reverse().map(c => (
-            <ContractCard key={c.id} card={c}
-              onExpressInterest={card => setModal(card)}
-              onSkip={onSkip}
-            />
+      {/* ── MOBILE TAB BAR ───────────────────────────────────────────────── */}
+      {isMobile && (
+        <div style={{
+          display: "flex", background: SURFACE2,
+          borderBottom: `1px solid ${BORDER}`,
+          position: "sticky", top: 60, zIndex: 50,
+        }}>
+          {[
+            { key: false, label: `Contracts (${cards.length})` },
+            { key: true,  label: `🏆 Deals (${deals.length})` },
+          ].map(t => (
+            <button key={String(t.key)} onClick={() => setDealTab(t.key)} style={{
+              flex: 1, padding: "12px 8px", border: "none",
+              background: dealTab === t.key ? `${CYAN}15` : "transparent",
+              borderBottom: dealTab === t.key ? `2px solid ${CYAN}` : "2px solid transparent",
+              color: dealTab === t.key ? CYAN : "#6a8aaa",
+              fontSize: 13, fontWeight: 700, cursor: "pointer",
+            }}>{t.label}</button>
           ))}
         </div>
-      </div>
+      )}
 
-      {/* ── DIVIDER ──────────────────────────────────────────────────────── */}
-      <div style={{ width: 1, background: BORDER, flexShrink: 0 }} />
+      {/* ── LEFT / MAIN: Feed ────────────────────────────────────────────── */}
+      {(!isMobile || !dealTab) && (
+        <div style={{ flex: 1, minWidth: 0, padding: isMobile ? "20px 16px" : "28px 20px" }}>
+          {showAlert && (
+            <div className="alert-banner" style={{
+              background: `${CYAN}12`, border: `1px solid ${CYAN}`,
+              borderRadius: 10, padding: "11px 16px", marginBottom: 16,
+              display: "flex", alignItems: "center", gap: 10,
+              color: CYAN, fontWeight: 700, fontSize: 13,
+            }}>
+              <span style={{
+                width: 9, height: 9, borderRadius: "50%", background: CYAN,
+                flexShrink: 0, animation: "pulse-ring 1s ease 3", display: "inline-block",
+              }} />
+              New contract posted in your area — be the first to respond.
+            </div>
+          )}
 
-      {/* ── RIGHT: Deals Sidebar ─────────────────────────────────────────── */}
-      <div style={{
-        width: 280, flexShrink: 0,
-        background: SURFACE2,
-        display: "flex", flexDirection: "column",
-      }}>
-        <DealsSidebar deals={deals} />
-      </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
+            <div>
+              <div style={{ fontSize: isMobile ? 20 : 22, fontWeight: 800, letterSpacing: "-0.02em" }}>Incoming Alerts</div>
+              <div style={{ color: "#6a8aaa", fontSize: 13, marginTop: 3 }}>
+                {cards.length} active contract{cards.length !== 1 ? "s" : ""} near you
+              </div>
+            </div>
+            <div style={{
+              background: SURFACE, border: `1px solid ${BORDER}`,
+              borderRadius: 8, padding: "5px 12px",
+              fontSize: 10, fontWeight: 700, color: "#6a8aaa",
+              textTransform: "uppercase", letterSpacing: "0.06em",
+            }}>Live Feed</div>
+          </div>
 
-      {/* Modal */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {cards.length === 0 && (
+              <div style={{ textAlign: "center", padding: "50px 0", color: "#2a4a6f", fontSize: 13 }}>
+                No active contracts right now. Check back shortly.
+              </div>
+            )}
+            {[...cards].reverse().map(c => (
+              <ContractCard key={c.id} card={c}
+                onExpressInterest={card => setModal(card)}
+                onSkip={onSkip}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── DIVIDER (desktop only) ───────────────────────────────────────── */}
+      {!isMobile && <div style={{ width: 1, background: BORDER, flexShrink: 0 }} />}
+
+      {/* ── RIGHT / DEALS: Sidebar ───────────────────────────────────────── */}
+      {(!isMobile || dealTab) && (
+        <div style={{
+          width: isMobile ? "100%" : 280,
+          flexShrink: 0,
+          background: SURFACE2,
+          display: "flex", flexDirection: "column",
+        }}>
+          <DealsSidebar deals={deals} isMobile={isMobile} />
+        </div>
+      )}
+
       {modal && (
         <ResponseModal
           card={modal}
@@ -656,6 +686,17 @@ function CleanerView({ cards, deals, onExpressInterest, onSkip }) {
       )}
     </div>
   );
+}
+
+// ─── RESPONSIVE HOOK ──────────────────────────────────────────────────────────
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint);
+  useEffect(() => {
+    const fn = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener("resize", fn);
+    return () => window.removeEventListener("resize", fn);
+  }, [breakpoint]);
+  return isMobile;
 }
 
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
@@ -748,16 +789,19 @@ export default function App() {
             {/* Tabs */}
             <div style={{ display: "flex", gap: 3, background: NAVY, borderRadius: 9, padding: 3 }}>
               {[
-                { key: "post",    label: "Post a Contract" },
-                { key: "cleaner", label: "Cleaner Dashboard" },
+                { key: "post",    label: "Post a Contract", short: "Post" },
+                { key: "cleaner", label: "Cleaner Dashboard", short: "Dashboard" },
               ].map(t => (
                 <button key={t.key} onClick={() => setTab(t.key)} style={{
                   background: tab === t.key ? CYAN : "transparent",
                   color: tab === t.key ? NAVY : "#6a8aaa",
                   border: "none", borderRadius: 6,
-                  padding: "7px 14px", fontSize: 12, fontWeight: 700,
+                  padding: "7px 10px", fontSize: 12, fontWeight: 700,
                   cursor: "pointer", transition: "all 0.18s", whiteSpace: "nowrap",
-                }}>{t.label}</button>
+                }}>
+                  <span className="tab-full">{t.label}</span>
+                  <span className="tab-short" style={{ display: "none" }}>{t.short}</span>
+                </button>
               ))}
             </div>
           </div>
