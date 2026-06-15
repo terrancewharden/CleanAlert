@@ -11,7 +11,7 @@ export function AuthProvider({ children }) {
     if (!token) { setLoading(false); return; }
     fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setUser(data); else logout(); })
+      .then(data => { if (data && (data.id || data.user)) setUser(data.user || data); else logout(); })
       .finally(() => setLoading(false));
   }, [token]);
 

@@ -53,7 +53,7 @@ router.post("/login", async (req, res) => {
 router.get("/me", requireAuth, async (req, res) => {
   const { rows } = await pool.query("SELECT * FROM users WHERE id=$1", [req.user.id]);
   if (!rows.length) return res.status(404).json({ error: "User not found" });
-  res.json({ user: sanitize(rows[0]) });
+  res.json(sanitize(rows[0]));
 });
 
 function sanitize(u) {
