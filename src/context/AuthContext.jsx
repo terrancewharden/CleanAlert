@@ -4,16 +4,26 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(() => localStorage.getItem("ca_token"));
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Run ONCE on mount — restore session from localStorage
   useEffect(() => {
-    if (!token) { setLoading(false); return; }
-    fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
+    const saved = localStorage.getItem("ca_token");
+    if (!saved) { setLoading(false); return; }
+
+    fetch("/api/auth/me", { headers: { Authorization: `Bearer ${saved}` } })
       .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data && (data.id || data.user)) setUser(data.user || data); else logout(); })
+      .then(data => {
+        if (data?.id) {
+          setToken(saved);
+          setUser(data);
+        } else {
+          localStorage.removeItem("ca_token");
+        }
+      })
       .finally(() => setLoading(false));
-  }, [token]);
+  }, []); // empty deps — only on mount
 
   const login = (tok, userData) => {
     localStorage.setItem("ca_token", tok);
@@ -28,9 +38,14 @@ export function AuthProvider({ children }) {
   };
 
   const authFetch = (url, opts = {}) => {
+    const t = token || localStorage.getItem("ca_token");
     return fetch(url, {
       ...opts,
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(opts.headers || {}) },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${t}`,
+        ...(opts.headers || {}),
+      },
     });
   };
 
