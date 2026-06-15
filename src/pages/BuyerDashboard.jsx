@@ -1,43 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
 import Logo from "../components/Logo.jsx";
-import { useAuth } from "../context/AuthContext.jsx";
 
-const CYAN="#00d4ff",NAVY="#0a1628",SURFACE="#0f2044",BORDER="#1e3a6e",GOLD="#ffd700",GREEN="#00e096",MUTED="#6b8cba",TEXT="#e8f4ff",LABEL="#a0b4cc";
+const NAVY="#0A1628", CYAN="#00D4FF", BORDER="#1e3a6e", MUTED="#6b8cba";
 
-const S = {
-  page:{minHeight:"100vh",background:NAVY,fontFamily:"system-ui,sans-serif",color:TEXT},
-  nav:{background:SURFACE,borderBottom:`1px solid ${BORDER}`,padding:"1rem 1.5rem",display:"flex",alignItems:"center",justifyContent:"space-between"},
-  logo:{color:CYAN,fontWeight:800,fontSize:20},
-  navRight:{display:"flex",gap:12,alignItems:"center"},
-  navBtn:{background:"transparent",color:MUTED,border:`1px solid ${BORDER}`,borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:13},
-  body:{maxWidth:900,margin:"0 auto",padding:"1.5rem 1rem"},
-  h2:{color:TEXT,fontSize:20,fontWeight:700,marginBottom:"1.25rem"},
-  card:{background:SURFACE,border:`1px solid ${BORDER}`,borderRadius:14,padding:"1.5rem",marginBottom:"1.25rem"},
-  form:{display:"grid",gap:"1rem"},
-  row2:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1rem"},
-  label:{color:LABEL,fontSize:13,marginBottom:5,display:"block"},
-  input:{width:"100%",padding:"0.7rem 1rem",background:NAVY,border:`1px solid ${BORDER}`,borderRadius:10,color:TEXT,fontSize:14,boxSizing:"border-box",outline:"none"},
-  select:{width:"100%",padding:"0.7rem 1rem",background:NAVY,border:`1px solid ${BORDER}`,borderRadius:10,color:TEXT,fontSize:14,boxSizing:"border-box",outline:"none"},
-  textarea:{width:"100%",padding:"0.7rem 1rem",background:NAVY,border:`1px solid ${BORDER}`,borderRadius:10,color:TEXT,fontSize:14,boxSizing:"border-box",outline:"none",resize:"vertical",minHeight:90},
-  btn:{padding:"0.8rem 1.5rem",background:CYAN,color:NAVY,fontWeight:700,fontSize:15,border:"none",borderRadius:10,cursor:"pointer"},
-  contractCard:{background:NAVY,border:`1px solid ${BORDER}`,borderRadius:12,padding:"1.25rem",marginBottom:"1rem"},
-  contractTitle:{color:TEXT,fontWeight:700,fontSize:16,marginBottom:8},
-  meta:{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8},
-  tag:{background:"rgba(0,212,255,0.1)",color:CYAN,fontSize:12,padding:"3px 10px",borderRadius:20},
-  responses:{color:GREEN,fontSize:13,fontWeight:600},
-  daysLeft:{color:GOLD,fontSize:12},
-  tabs:{display:"flex",gap:8,marginBottom:"1.5rem"},
-  tab:(a)=>({padding:"0.6rem 1.25rem",borderRadius:10,border:`1px solid ${a?CYAN:BORDER}`,background:a?"rgba(0,212,255,0.08)":SURFACE,color:a?CYAN:MUTED,cursor:"pointer",fontWeight:600,fontSize:14}),
-  responseItem:{display:"flex",alignItems:"center",gap:12,padding:"0.75rem",background:SURFACE,borderRadius:10,marginBottom:8},
-  rName:{color:TEXT,fontWeight:600,fontSize:14,flex:1},
-  rCompany:{color:MUTED,fontSize:13},
-  rRating:{color:GOLD,fontSize:13},
-  acceptBtn:{background:GREEN,color:NAVY,border:"none",borderRadius:8,padding:"6px 14px",cursor:"pointer",fontWeight:700,fontSize:13},
-  reviewForm:{background:"rgba(0,212,255,0.05)",border:`1px solid ${BORDER}`,borderRadius:10,padding:"1rem",marginTop:"0.75rem"},
-  stars:{display:"flex",gap:6,marginBottom:"0.75rem"},
-  star:(a)=>({fontSize:24,cursor:"pointer",color:a?GOLD:BORDER}),
-};
+const CATEGORIES=["Residential","Commercial","Airbnb/VRBO","Office","Post-Construction","Move-In/Move-Out","Deep Clean","Other"];
 
 export default function BuyerDashboard() {
   const { user, authFetch, logout } = useAuth();
@@ -46,195 +14,175 @@ export default function BuyerDashboard() {
   const [contracts, setContracts] = useState([]);
   const [expanded, setExpanded] = useState(null);
   const [responses, setResponses] = useState({});
-  const [reviewState, setReviewState] = useState({});
-  const [form, setForm] = useState({ title:"", location:"", service_type:"", sq_footage:"", frequency:"", budget:"", duration_months:"3", notes:"" });
-  const [posting, setPosting] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
 
-  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
+  const [form, setForm] = useState({
+    title:"", category:"Residential", description:"", location:"",
+    budget:"", preferred_date:"", frequency:"One-time"
+  });
 
   useEffect(() => {
-    if (tab === "contracts") loadContracts();
+    if (tab==="contracts") loadContracts();
   }, [tab]);
 
   const loadContracts = async () => {
     const r = await authFetch("/api/contracts/posted");
-    if (r.ok) setContracts(await r.json());
+    const d = await r.json();
+    if (Array.isArray(d)) setContracts(d);
   };
 
   const loadResponses = async (id) => {
+    if (expanded===id) { setExpanded(null); return; }
+    setExpanded(id);
     if (responses[id]) return;
     const r = await authFetch(`/api/contracts/${id}`);
-    if (r.ok) {
-      const data = await r.json();
-      setResponses(p => ({ ...p, [id]: data.responses || [] }));
-    }
+    const d = await r.json();
+    setResponses(prev => ({ ...prev, [id]: d.responses||[] }));
   };
 
-  const expand = async (id) => {
-    setExpanded(expanded === id ? null : id);
-    if (expanded !== id) loadResponses(id);
+  const acceptResponse = async (contractId, responseId) => {
+    await authFetch(`/api/contracts/${contractId}/accept/${responseId}`, { method:"POST" });
+    setResponses(prev => ({
+      ...prev,
+      [contractId]: prev[contractId].map(r => ({
+        ...r,
+        status: r.id===responseId ? "accepted" : r.status==="pending" ? "rejected" : r.status
+      }))
+    }));
   };
 
-  const accept = async (contractId, responseId, cleanerId) => {
-    await authFetch(`/api/contracts/${contractId}/accept/${responseId}`, { method: "POST" });
-    setResponses(p => ({ ...p, [contractId]: p[contractId].map(r => ({ ...r, status: r.id === responseId ? "accepted" : "rejected" })) }));
-    setReviewState(p => ({ ...p, [responseId]: { open: true, cleanerId, rating: 0, comment: "" } }));
-  };
-
-  const submitReview = async (dealId, cleanerId, responseId) => {
-    const rs = reviewState[responseId];
-    await authFetch("/api/reviews", { method: "POST", body: JSON.stringify({ deal_id: dealId, reviewee_id: cleanerId, rating: rs.rating, comment: rs.comment }) });
-    setReviewState(p => ({ ...p, [responseId]: { ...p[responseId], submitted: true } }));
-  };
-
-  const postContract = async e => {
+  const submitContract = async (e) => {
     e.preventDefault();
-    setPosting(true);
-    const r = await authFetch("/api/contracts", { method: "POST", body: JSON.stringify(form) });
-    setPosting(false);
-    if (r.ok) { setSuccess(true); setTimeout(() => setSuccess(false), 3000); setForm({ title:"", location:"", service_type:"", sq_footage:"", frequency:"", budget:"", duration_months:"3", notes:"" }); }
+    setLoading(true); setMsg("");
+    const r = await authFetch("/api/contracts", {
+      method:"POST", body: JSON.stringify(form)
+    });
+    const d = await r.json();
+    if (d.id) { setMsg("✓ Contract posted!"); setForm({title:"",category:"Residential",description:"",location:"",budget:"",preferred_date:"",frequency:"One-time"}); }
+    else setMsg(d.error||"Something went wrong");
+    setLoading(false);
   };
+
+  const inp = { width:"100%", padding:"0.65rem 0.85rem", background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:7, fontSize:14, color:"#111827", fontFamily:"Inter,sans-serif", boxSizing:"border-box" };
+  const label = { display:"block", color:"#374151", fontSize:13, fontWeight:600, marginBottom:5 };
 
   return (
-    <div style={S.page}>
-      <nav style={S.nav}>
-        <Logo size={28} />
-        <div style={S.navRight}>
-          <span style={{ color: MUTED, fontSize: 13 }}>{user?.company_name || user?.name}</span>
-          <button style={S.navBtn} onClick={() => { logout(); nav("/login"); }}>Sign out</button>
+    <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"Inter,sans-serif" }}>
+      {/* NAV */}
+      <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <Logo size={30} />
+        <div style={{ display:"flex", gap:8 }}>
+          {["post","contracts"].map(t=>(
+            <button key={t} onClick={()=>setTab(t)} style={{ background:tab===t?CYAN:"transparent", color:tab===t?NAVY:MUTED, border:`1px solid ${tab===t?CYAN:BORDER}`, borderRadius:6, padding:"5px 14px", fontSize:13, fontWeight:tab===t?700:400, cursor:"pointer" }}>
+              {t==="post"?"Post Job":"My Contracts"}
+            </button>
+          ))}
+          <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, borderRadius:6, padding:"5px 12px", fontSize:13, cursor:"pointer" }}>Sign out</button>
         </div>
       </nav>
-      <div style={S.body}>
-        <div style={S.tabs}>
-          {[["post","Post Contract"],["contracts","My Contracts"]].map(([k,l]) => (
-            <button key={k} style={S.tab(tab===k)} onClick={() => setTab(k)}>{l}</button>
-          ))}
-        </div>
 
-        {tab === "post" && (
-          <div style={S.card}>
-            <div style={S.h2}>Post a Cleaning Contract</div>
-            {success && <div style={{ color: GREEN, marginBottom: "1rem", fontWeight: 600 }}>✅ Contract posted! Cleaners will start responding soon.</div>}
-            <form style={S.form} onSubmit={postContract}>
+      <div style={{ padding:"1.5rem", maxWidth:760, margin:"0 auto" }}>
+
+        {/* POST JOB */}
+        {tab==="post" && (
+          <div style={{ background:"#fff", borderRadius:12, padding:"2rem", border:"1px solid #e5e7eb" }}>
+            <h2 style={{ color:NAVY, fontSize:20, fontWeight:800, marginBottom:"1.5rem" }}>Post a Cleaning Job</h2>
+            <form onSubmit={submitContract} style={{ display:"grid", gap:16 }}>
               <div>
-                <label style={S.label}>Contract Title</label>
-                <input style={S.input} value={form.title} onChange={set("title")} placeholder="e.g. Weekly Office Cleaning — 3rd Floor" required />
+                <label style={label}>Job Title</label>
+                <input style={inp} placeholder="e.g. 3BR apartment deep clean" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} required />
               </div>
-              <div style={S.row2}>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                 <div>
-                  <label style={S.label}>Location</label>
-                  <input style={S.input} value={form.location} onChange={set("location")} placeholder="City, State" required />
-                </div>
-                <div>
-                  <label style={S.label}>Service Type</label>
-                  <select style={S.select} value={form.service_type} onChange={set("service_type")} required>
-                    <option value="">Select…</option>
-                    {["Office","Warehouse","Retail","Medical","School","Restaurant","Post-Construction"].map(t => <option key={t}>{t}</option>)}
+                  <label style={label}>Category</label>
+                  <select style={inp} value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>
+                    {CATEGORIES.map(c=><option key={c}>{c}</option>)}
                   </select>
                 </div>
-              </div>
-              <div style={S.row2}>
                 <div>
-                  <label style={S.label}>Sq. Footage</label>
-                  <input style={S.input} value={form.sq_footage} onChange={set("sq_footage")} placeholder="e.g. 5,000 sq ft" />
-                </div>
-                <div>
-                  <label style={S.label}>Frequency</label>
-                  <select style={S.select} value={form.frequency} onChange={set("frequency")}>
-                    <option value="">Select…</option>
-                    {["Daily","3x/week","Weekly","Bi-weekly","Monthly","One-time"].map(f => <option key={f}>{f}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div style={S.row2}>
-                <div>
-                  <label style={S.label}>Budget (monthly)</label>
-                  <input style={S.input} value={form.budget} onChange={set("budget")} placeholder="e.g. $800–$1,200" />
-                </div>
-                <div>
-                  <label style={S.label}>Contract Duration</label>
-                  <select style={S.select} value={form.duration_months} onChange={set("duration_months")}>
-                    {[["1","1 month"],["3","3 months"],["6","6 months"],["12","1 year"],["24","2 years"]].map(([v,l]) => <option key={v} value={v}>{l}</option>)}
+                  <label style={label}>Frequency</label>
+                  <select style={inp} value={form.frequency} onChange={e=>setForm({...form,frequency:e.target.value})}>
+                    {["One-time","Weekly","Bi-weekly","Monthly"].map(f=><option key={f}>{f}</option>)}
                   </select>
                 </div>
               </div>
               <div>
-                <label style={S.label}>Additional Notes</label>
-                <textarea style={S.textarea} value={form.notes} onChange={set("notes")} placeholder="Special requirements, access instructions, etc." />
+                <label style={label}>Description</label>
+                <textarea style={{...inp,minHeight:90,resize:"vertical"}} placeholder="Describe what needs to be cleaned..." value={form.description} onChange={e=>setForm({...form,description:e.target.value})} required />
               </div>
-              <div><button style={S.btn} type="submit" disabled={posting}>{posting ? "Posting…" : "Post Contract →"}</button></div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <div>
+                  <label style={label}>Location / ZIP</label>
+                  <input style={inp} placeholder="Philadelphia, PA 19103" value={form.location} onChange={e=>setForm({...form,location:e.target.value})} required />
+                </div>
+                <div>
+                  <label style={label}>Budget</label>
+                  <input style={inp} placeholder="$150" value={form.budget} onChange={e=>setForm({...form,budget:e.target.value})} />
+                </div>
+              </div>
+              <div>
+                <label style={label}>Preferred Date</label>
+                <input type="date" style={inp} value={form.preferred_date} onChange={e=>setForm({...form,preferred_date:e.target.value})} />
+              </div>
+              {msg && <div style={{ color:msg.startsWith("✓")?"#15803d":"#dc2626", fontSize:13, fontWeight:600 }}>{msg}</div>}
+              <button type="submit" disabled={loading} style={{ background:CYAN, color:NAVY, border:"none", borderRadius:8, padding:"0.85rem", fontSize:15, fontWeight:800, cursor:"pointer", letterSpacing:"0.01em" }}>
+                {loading?"Posting…":"Post Job →"}
+              </button>
             </form>
           </div>
         )}
 
-        {tab === "contracts" && (
+        {/* MY CONTRACTS */}
+        {tab==="contracts" && (
           <div>
-            <div style={S.h2}>Your Posted Contracts</div>
-            {contracts.length === 0 && <p style={{ color: MUTED }}>No contracts posted yet.</p>}
-            {contracts.map(c => (
-              <div key={c.id} style={S.contractCard}>
-                <div style={S.contractTitle} onClick={() => expand(c.id)} role="button" tabIndex={0}>
-                  {c.title}
-                </div>
-                <div style={S.meta}>
-                  <span style={S.tag}>{c.service_type}</span>
-                  <span style={S.tag}>{c.location}</span>
-                  <span style={S.tag}>{c.frequency}</span>
-                  {c.days_remaining !== undefined && (
-                    <span style={{ ...S.tag, background: c.days_remaining < 14 ? "rgba(255,107,107,0.15)" : "rgba(0,224,150,0.1)", color: c.days_remaining < 14 ? "#ff6b6b" : GREEN }}>
-                      {c.days_remaining > 0 ? `${c.days_remaining}d left` : "EXPIRED — Renew?"}
-                    </span>
+            <h2 style={{ color:"#fff", fontSize:20, fontWeight:800, marginBottom:"1rem" }}>My Posted Jobs</h2>
+            {contracts.length===0
+              ? <div style={{ background:"#fff", borderRadius:12, padding:"2.5rem", textAlign:"center", color:"#6b7280", border:"1px solid #e5e7eb" }}>No jobs posted yet. <button onClick={()=>setTab("post")} style={{ color:CYAN, background:"none", border:"none", cursor:"pointer", fontWeight:700 }}>Post one →</button></div>
+              : contracts.map(c=>(
+                <div key={c.id} style={{ background:"#fff", borderRadius:12, marginBottom:14, border:"1px solid #e5e7eb", overflow:"hidden" }}>
+                  <div onClick={()=>loadResponses(c.id)} style={{ padding:"1.25rem", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <div>
+                      <div style={{ color:NAVY, fontWeight:700, fontSize:15 }}>{c.title}</div>
+                      <div style={{ color:"#6b7280", fontSize:13, marginTop:4 }}>{c.location} · {c.category} · {c.response_count||0} response{c.response_count!==1?"s":""}</div>
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                      {c.budget && <span style={{ color:"#15803d", fontWeight:700, fontSize:14 }}>{c.budget}</span>}
+                      <span style={{ color:CYAN, fontSize:18 }}>{expanded===c.id?"▲":"▼"}</span>
+                    </div>
+                  </div>
+                  {expanded===c.id && (
+                    <div style={{ borderTop:"1px solid #f3f4f6", padding:"1rem 1.25rem", background:"#fafafa" }}>
+                      {(!responses[c.id]||responses[c.id].length===0)
+                        ? <p style={{ color:"#9ca3af", fontSize:13 }}>No responses yet.</p>
+                        : responses[c.id].map(resp=>(
+                          <div key={resp.id} style={{ background:"#fff", borderRadius:8, padding:"1rem", marginBottom:10, border:"1px solid #e5e7eb" }}>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                              <div>
+                                <div style={{ color:NAVY, fontWeight:700, fontSize:14 }}>{resp.cleaner_name}</div>
+                                {resp.company_name && <div style={{ color:"#6b7280", fontSize:12 }}>{resp.company_name}</div>}
+                                <div style={{ color:"#374151", fontSize:13, marginTop:6 }}>{resp.message}</div>
+                                {resp.quote && <div style={{ color:"#15803d", fontWeight:700, fontSize:14, marginTop:6 }}>Quote: {resp.quote}</div>}
+                              </div>
+                              <span style={{
+                                background:resp.status==="accepted"?"#dcfce7":resp.status==="rejected"?"#fee2e2":"#fef9c3",
+                                color:resp.status==="accepted"?"#166534":resp.status==="rejected"?"#dc2626":"#92400e",
+                                fontSize:11, padding:"3px 10px", borderRadius:4, fontWeight:700, whiteSpace:"nowrap"
+                              }}>{resp.status.toUpperCase()}</span>
+                            </div>
+                            {resp.status==="pending" && (
+                              <button onClick={()=>acceptResponse(c.id,resp.id)} style={{ marginTop:10, background:CYAN, color:NAVY, border:"none", borderRadius:6, padding:"6px 16px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+                                Accept This Cleaner
+                              </button>
+                            )}
+                          </div>
+                        ))
+                      }
+                    </div>
                   )}
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={S.responses}>{c.response_count || 0} responses</span>
-                  <button style={{ ...S.navBtn, color: CYAN }} onClick={() => expand(c.id)}>
-                    {expanded === c.id ? "Hide ▲" : "View Responses ▼"}
-                  </button>
-                </div>
-
-                {expanded === c.id && responses[c.id] && (
-                  <div style={{ marginTop: "1rem" }}>
-                    {responses[c.id].length === 0 && <p style={{ color: MUTED, fontSize: 14 }}>No responses yet. Cleaners will respond soon.</p>}
-                    {responses[c.id].map(resp => (
-                      <div key={resp.id} style={S.responseItem}>
-                        <div style={{ flex: 1 }}>
-                          <div style={S.rName}>{resp.cleaner_name}</div>
-                          <div style={S.rCompany}>{resp.company_name} · {resp.location}</div>
-                          {resp.rating > 0 && <div style={S.rRating}>{"★".repeat(Math.round(resp.rating))} ({resp.review_count} reviews)</div>}
-                          {resp.message && <p style={{ color: LABEL, fontSize: 13, margin: "0.5rem 0 0" }}>{resp.message}</p>}
-                        </div>
-                        {resp.status === "pending" && (
-                          <button style={S.acceptBtn} onClick={() => accept(c.id, resp.id, resp.cleaner_id)}>Accept ✓</button>
-                        )}
-                        {resp.status === "accepted" && <span style={{ color: GREEN, fontSize: 13, fontWeight: 700 }}>✅ Hired</span>}
-                        {resp.status === "rejected" && <span style={{ color: MUTED, fontSize: 13 }}>Passed</span>}
-
-                        {reviewState[resp.id]?.open && !reviewState[resp.id]?.submitted && (
-                          <div style={S.reviewForm}>
-                            <div style={{ color: TEXT, fontSize: 14, marginBottom: "0.75rem" }}>Leave a review for {resp.cleaner_name}</div>
-                            <div style={S.stars}>
-                              {[1,2,3,4,5].map(n => (
-                                <span key={n} style={S.star(n <= (reviewState[resp.id]?.rating || 0))}
-                                  onClick={() => setReviewState(p => ({ ...p, [resp.id]: { ...p[resp.id], rating: n } }))}>★</span>
-                              ))}
-                            </div>
-                            <textarea style={{ ...S.textarea, minHeight: 60 }}
-                              placeholder="How was the service?"
-                              value={reviewState[resp.id]?.comment || ""}
-                              onChange={e => setReviewState(p => ({ ...p, [resp.id]: { ...p[resp.id], comment: e.target.value } }))} />
-                            <button style={{ ...S.btn, marginTop: "0.5rem", padding: "0.6rem 1rem", fontSize: 13 }}
-                              onClick={() => submitReview(null, resp.cleaner_id, resp.id)}>Submit Review</button>
-                          </div>
-                        )}
-                        {reviewState[resp.id]?.submitted && <span style={{ color: GREEN, fontSize: 13 }}>Review submitted ✓</span>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+              ))
+            }
           </div>
         )}
       </div>

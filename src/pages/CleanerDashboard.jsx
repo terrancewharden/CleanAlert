@@ -1,239 +1,205 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useNavigate } from "react-router-dom";
 import Logo from "../components/Logo.jsx";
 import ContractCard from "../components/ContractCard.jsx";
 
-const CYAN="#00d4ff",NAVY="#0a1628",SURFACE="#0f2044",BORDER="#1e3a6e",GOLD="#ffd700",GREEN="#00e096",PURPLE="#7c3aed",MUTED="#6b8cba",TEXT="#e8f4ff",LABEL="#a0b4cc";
-
-const CSS = `
-@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(0,212,255,.5)}70%{box-shadow:0 0 0 14px rgba(0,212,255,0)}100%{box-shadow:0 0 0 0 rgba(0,212,255,0)}}
-@keyframes pulseGold{0%{box-shadow:0 0 0 0 rgba(255,215,0,.4)}70%{box-shadow:0 0 0 10px rgba(255,215,0,0)}100%{box-shadow:0 0 0 0 rgba(255,215,0,0)}}
-@keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-`;
+const NAVY="#0A1628", CYAN="#00D4FF", BORDER="#1e3a6e", MUTED="#6b8cba";
 
 const SEED_CARDS = [
-  { id:"seed-1", title:"Weekly Office Cleaning — Downtown HQ", location:"Philadelphia, PA", service_type:"Office", sq_footage:"4,200 sq ft", frequency:"3x/week", budget:"$1,100/mo", duration_months:12, notes:"Need bonded and insured crew. Access via lobby after 6pm.", _seed:true },
-  { id:"seed-2", title:"Warehouse Deep Clean + Maintenance", location:"Camden, NJ", service_type:"Warehouse", sq_footage:"18,000 sq ft", frequency:"Weekly", budget:"$2,400/mo", duration_months:6, notes:"Heavy equipment areas require industrial cleaning products.", _seed:true },
-  { id:"seed-3", title:"Medical Office Sanitization", location:"King of Prussia, PA", service_type:"Medical", sq_footage:"2,800 sq ft", frequency:"Daily", budget:"$3,200/mo", duration_months:24, notes:"Must follow OSHA standards. References required.", _seed:true },
+  { id:"seed-1", title:"3BR Apartment Deep Clean", category:"Deep Clean", location:"Center City, PA 19103", budget:"$180", preferred_date:"2026-06-18", description:"Need a thorough deep clean before new tenants move in. 3 bed 2 bath, ~1,400 sqft. Kitchen and bathrooms priority.", frequency:"One-time", isSeed:true },
+  { id:"seed-2", title:"Weekly Office Maintenance", category:"Commercial", location:"King of Prussia, PA 19406", budget:"$120/visit", preferred_date:"2026-06-20", description:"Small startup office, ~800 sqft. Kitchenette, bathrooms, common areas. Looking for reliable weekly cleaner.", frequency:"Weekly", isSeed:true },
+  { id:"seed-3", title:"Airbnb Turnover — Studio", category:"Airbnb/VRBO", location:"Fishtown, PA 19125", budget:"$95", preferred_date:"2026-06-17", description:"Quick turnovers between guests. Usually 2–4 hours. Need someone fast and detail-oriented.", frequency:"Bi-weekly", isSeed:true },
 ];
 
 const SEED_DEALS = [
-  { id:1, cleaner:"Apex Clean Co.", type:"Office · 5,200 sqft", monthly:"$1,400/mo", badge:"🏆" },
-  { id:2, cleaner:"SparkPro Services", type:"Warehouse · Weekly", monthly:"$950/mo", badge:"⭐" },
-  { id:3, cleaner:"Elite Facility Group", type:"Medical · Daily", monthly:"$3,200/mo", badge:"💎" },
-  { id:4, cleaner:"BrightShine LLC", type:"Retail · 3x/week", monthly:"$780/mo", badge:"🥇" },
-  { id:5, cleaner:"ProClean Solutions", type:"School · Weekly", monthly:"$1,850/mo", badge:"🏅" },
+  { id:"d1", title:"Mrs. Meyer's Cleaning Bundle", brand:"Grove Co.", value:"$48 value", description:"All-purpose, dish soap, hand soap + bonus scrubber set. Pro-grade.", badge:"HOT DEAL", color:"#ff6b35" },
+  { id:"d2", title:"Microfiber Pro Pack (24ct)", brand:"AmazonBasics Pro", value:"$34 value", description:"Industrial-grade microfiber cloths. Lint-free, machine washable 500x.", badge:"BEST SELLER", color:"#7c3aed" },
+  { id:"d3", title:"Shark Navigator Pro Upright", brand:"Shark", value:"$329 value", description:"Bagless, HEPA filter, anti-allergen seal. Preferred by 80% of pro cleaners.", badge:"STAFF PICK", color:"#0369a1" },
+  { id:"d4", title:"Concentrated Cleaner 5-Pack", brand:"Zep Commercial", value:"$67 value", description:"Multi-surface, bathroom, floor, glass, degreaser. Each jug makes 32 ready-to-use quarts.", badge:"BULK DEAL", color:"#166534" },
+  { id:"d5", title:"Mop & Bucket Pro System", brand:"Rubbermaid", value:"$89 value", description:"Commercial-grade wringer bucket, 2 cotton mop heads. Built for daily use.", badge:"NEW", color:"#b45309" },
 ];
 
-function Tag({ children, color = CYAN }) {
-  return (
-    <span style={{ background:`rgba(${color===GOLD?"255,215,0":color===GREEN?"0,224,150":"0,212,255"},.12)`, color, fontSize:11, padding:"3px 10px", borderRadius:20, fontWeight:600, whiteSpace:"nowrap" }}>
-      {children}
-    </span>
-  );
-}
+const shimmer = `@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}`;
+const pulse = `@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,0.4)}50%{box-shadow:0 0 0 8px rgba(0,212,255,0)}}`;
 
-function DealBadge({ deal }) {
+function DealBadge({ color, label }) {
   return (
-    <div style={{
-      background:`linear-gradient(135deg, ${SURFACE}, rgba(255,215,0,0.05))`,
-      border:`1px solid rgba(255,215,0,0.35)`,
-      borderRadius:14,
-      padding:"1rem",
-      marginBottom:"0.75rem",
-      animation:"fadeUp .4s ease",
-      position:"relative",
-      overflow:"hidden",
-    }}>
-      {/* shimmer bar */}
-      <div style={{
-        position:"absolute", top:0, left:0, right:0, height:2,
-        background:`linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
-        backgroundSize:"200% auto",
-        animation:"shimmer 2.5s linear infinite",
-      }} />
-      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
-        <span style={{ fontSize:20 }}>{deal.badge}</span>
-        <span style={{ color:GOLD, fontWeight:800, fontSize:16, animation:"pulseGold 3s infinite" }}>{deal.monthly}</span>
-      </div>
-      <div style={{ color:TEXT, fontWeight:600, fontSize:13 }}>{deal.cleaner}</div>
-      <div style={{ color:MUTED, fontSize:12, marginTop:2 }}>{deal.type}</div>
-    </div>
+    <span style={{
+      background:`linear-gradient(90deg,${color},${color}99,${color})`,
+      backgroundSize:"200% auto",
+      animation:"shimmer 2s linear infinite",
+      color:"#fff", fontSize:10, fontWeight:800, padding:"3px 10px",
+      borderRadius:4, letterSpacing:"0.08em"
+    }}>{label}</span>
   );
 }
 
 export default function CleanerDashboard() {
   const { user, authFetch, logout } = useAuth();
   const nav = useNavigate();
-  const [tab, setTab] = useState("leads");
+  const [tab, setTab] = useState("feed");
   const [liveContracts, setLiveContracts] = useState([]);
-  const [myContracts, setMyContracts] = useState([]);
-  const [deals, setDeals] = useState(SEED_DEALS);
   const [modal, setModal] = useState(null);
-  const [modalForm, setModalForm] = useState({ message:"", share_deal:false });
-  const [newIds, setNewIds] = useState(new Set());
-  const [submitting, setSubmitting] = useState(false);
+  const [responseMsg, setResponseMsg] = useState({});
+  const [responseQuote, setResponseQuote] = useState({});
+  const [submitted, setSubmitted] = useState({});
+  const [myContracts, setMyContracts] = useState([]);
 
-  useEffect(() => {
-    const el = document.createElement("style");
-    el.textContent = CSS;
-    document.head.appendChild(el);
-    loadLeads();
-    loadMyContracts();
-    const iv = setInterval(loadLeads, 15000);
-    return () => { clearInterval(iv); document.head.removeChild(el); };
-  }, []);
+  useEffect(()=>{
+    loadFeed();
+    const t = setInterval(loadFeed, 15000);
+    return ()=>clearInterval(t);
+  },[]);
 
-  const loadLeads = async () => {
+  useEffect(()=>{
+    if(tab==="mine") loadMine();
+  },[tab]);
+
+  const loadFeed = async ()=>{
     try {
-      const r = await authFetch("/api/contracts");
-      if (r.ok) {
-        const data = await r.json();
-        if (Array.isArray(data)) {
-          setLiveContracts(prev => {
-            const prevIds = new Set(prev.map(c => c.id));
-            const fresh = data.filter(c => !prevIds.has(c.id));
-            if (fresh.length) { setNewIds(new Set(fresh.map(c => c.id))); setTimeout(() => setNewIds(new Set()), 8000); }
-            return data;
-          });
-        }
-      }
-    } catch(e) {}
+      const r = await authFetch("/api/contracts/feed");
+      const d = await r.json();
+      if(Array.isArray(d)) setLiveContracts(d);
+    } catch(e){}
   };
 
-  const loadMyContracts = async () => {
+  const loadMine = async ()=>{
     try {
       const r = await authFetch("/api/contracts/my");
-      if (r.ok) { const d = await r.json(); if (Array.isArray(d)) setMyContracts(d); }
-    } catch(e) {}
+      const d = await r.json();
+      if(Array.isArray(d)) setMyContracts(d);
+    } catch(e){}
   };
 
-  // Combine seed cards + live contracts (seeds first so feed always looks active)
-  const allContracts = [...liveContracts, ...SEED_CARDS.filter(s => !liveContracts.some(l => l.id === s.id))];
-
-  const openModal = (contract) => { setModal(contract); setModalForm({ message:"", share_deal:false }); };
-
-  const submitInterest = async () => {
-    if (modal._seed) { setModal(null); return; } // seed cards don't submit
-    setSubmitting(true);
-    const r = await authFetch(`/api/contracts/${modal.id}/respond`, { method:"POST", body:JSON.stringify(modalForm) });
-    setSubmitting(false);
-    if (r.ok) {
-      setLiveContracts(p => p.filter(c => c.id !== modal.id));
-      if (modalForm.share_deal) {
-        setTimeout(() => setDeals(p => [{ id:Date.now(), cleaner:user?.company_name||user?.name||"You", type:modal.service_type, monthly:modal.budget||"TBD", badge:"🏆" }, ...p]), 4000);
-      }
-      setModal(null);
-    }
+  const sendResponse = async (contractId)=>{
+    const msg = responseMsg[contractId]||"";
+    const quote = responseQuote[contractId]||"";
+    if(!msg.trim()) return;
+    await authFetch(`/api/contracts/${contractId}/respond`,{
+      method:"POST", body:JSON.stringify({ message:msg, quote })
+    });
+    setSubmitted(p=>({...p,[contractId]:true}));
+    setModal(null);
   };
 
-  const hasNew = newIds.size > 0;
+  const allContracts = [...SEED_CARDS, ...liveContracts];
 
-  const NAV = { background:SURFACE, borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" };
-  const TAB = (a) => ({ padding:"0.6rem 1.25rem", borderRadius:10, border:`1px solid ${a?CYAN:BORDER}`, background:a?`rgba(0,212,255,0.08)`:SURFACE, color:a?CYAN:MUTED, cursor:"pointer", fontWeight:700, fontSize:13 });
+  const inp = { width:"100%", padding:"0.65rem 0.85rem", background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:7, fontSize:13, color:"#111827", fontFamily:"Inter,sans-serif", boxSizing:"border-box" };
 
   return (
-    <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"system-ui,sans-serif", color:TEXT }}>
-      <style>{CSS}</style>
+    <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"Inter,sans-serif" }}>
+      <style>{shimmer}{pulse}</style>
 
-      <nav style={NAV}>
+      {/* NAV */}
+      <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <Logo size={30} />
-        <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-          <span style={{ color:MUTED, fontSize:13 }}>{user?.company_name||user?.name}</span>
-          {user?.user_type === "admin" && (
-            <button onClick={() => nav("/admin")} style={{ background:"rgba(124,58,237,0.2)", color:"#a78bfa", border:"1px solid rgba(124,58,237,0.4)", borderRadius:8, padding:"5px 12px", fontSize:12, cursor:"pointer", fontWeight:700 }}>Admin</button>
-          )}
-          <button onClick={() => { logout(); nav("/"); }} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", fontSize:13 }}>Sign out</button>
+        <div style={{ display:"flex", gap:8 }}>
+          {["feed","deals","mine"].map(t=>(
+            <button key={t} onClick={()=>setTab(t)} style={{ background:tab===t?CYAN:"transparent", color:tab===t?NAVY:MUTED, border:`1px solid ${tab===t?CYAN:BORDER}`, borderRadius:6, padding:"5px 14px", fontSize:13, fontWeight:tab===t?700:400, cursor:"pointer" }}>
+              {t==="feed"?"Job Feed":t==="deals"?"Deals":t==="mine"?"My Bids":t}
+            </button>
+          ))}
+          <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, borderRadius:6, padding:"5px 12px", fontSize:13, cursor:"pointer" }}>Sign out</button>
         </div>
       </nav>
 
-      <div style={{ display:"flex", minHeight:"calc(100vh - 61px)" }}>
-        {/* MAIN */}
-        <div style={{ flex:1, padding:"1.5rem", overflowY:"auto" }}>
-          {hasNew && (
-            <div style={{ background:`linear-gradient(90deg,rgba(0,212,255,.15),rgba(0,212,255,.05))`, border:`1px solid ${CYAN}`, borderRadius:12, padding:"0.85rem 1.25rem", marginBottom:"1.25rem", display:"flex", alignItems:"center", gap:10, animation:"slideDown .4s ease" }}>
-              <div style={{ width:10, height:10, borderRadius:"50%", background:CYAN, animation:"pulseRing 1.5s infinite" }} />
-              <span style={{ color:CYAN, fontWeight:700, fontSize:14 }}>{newIds.size} new contract{newIds.size>1?"s":""} just posted near you</span>
+      <div style={{ padding:"1.5rem" }}>
+
+        {/* FEED */}
+        {tab==="feed" && (
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
+              <h2 style={{ color:"#fff", fontSize:18, fontWeight:800 }}>Available Jobs</h2>
+              <span style={{ color:MUTED, fontSize:12 }}>Live · updates every 15s</span>
             </div>
-          )}
-
-          <div style={{ display:"flex", gap:8, marginBottom:"1.25rem" }}>
-            {[["leads","🔴 Live Leads"],["mycontracts","My Contracts"]].map(([k,l]) => (
-              <button key={k} style={TAB(tab===k)} onClick={() => setTab(k)}>{l}</button>
-            ))}
-          </div>
-
-          {tab === "leads" && (
-            <>
-              {allContracts.map(c => (
-                <ContractCard key={c.id} contract={c} isNew={newIds.has(c.id)} onExpress={openModal} />
-              ))}
-            </>
-          )}
-
-          {tab === "mycontracts" && (
-            <>
-              {myContracts.length === 0 && <p style={{ color:MUTED }}>No active contracts yet. Express interest in a lead to get started.</p>}
-              {myContracts.map(c => (
-                <div key={c.id} style={{ background:SURFACE, border:`1px solid ${BORDER}`, borderRadius:14, padding:"1.25rem", marginBottom:"1rem" }}>
-                  <div style={{ color:TEXT, fontWeight:700, fontSize:16, marginBottom:8 }}>{c.title}</div>
-                  <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:8 }}>
-                    <Tag>{c.service_type}</Tag>
-                    <Tag>📍 {c.location}</Tag>
-                    <Tag color={c.days_remaining<=30?GOLD:GREEN}>{c.days_remaining}d remaining</Tag>
-                  </div>
-                  <div style={{ color:GREEN, fontWeight:700, fontSize:16 }}>{c.budget}</div>
-                  {c.days_remaining<=30 && (
-                    <div style={{ background:`rgba(255,215,0,0.08)`, border:`1px solid ${GOLD}`, borderRadius:8, padding:"0.5rem 0.75rem", marginTop:"0.75rem", color:GOLD, fontSize:13 }}>
-                      ⚠️ Contract ending soon — reach out to buyer to renew
-                    </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:16 }}>
+              {allContracts.map(c=>(
+                <div key={c.id}>
+                  <ContractCard contract={c} />
+                  {!submitted[c.id] ? (
+                    <button onClick={()=>setModal(c)} style={{
+                      width:"100%", background:CYAN, color:NAVY, border:"none", borderRadius:8,
+                      padding:"0.7rem", fontSize:13, fontWeight:800, cursor:"pointer", marginTop:8,
+                      animation:"pulse 2s infinite"
+                    }}>⚡ Express Interest</button>
+                  ) : (
+                    <div style={{ textAlign:"center", color:"#22c55e", fontSize:13, fontWeight:700, marginTop:8 }}>✓ Bid Sent</div>
                   )}
                 </div>
               ))}
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
 
-        {/* SIDEBAR — Claimed Deals */}
-        <div style={{ width:260, background:SURFACE, borderLeft:`1px solid ${BORDER}`, padding:"1.25rem", overflowY:"auto" }}>
-          <div style={{ color:MUTED, fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:"1rem" }}>🏆 Claimed Deals</div>
-          <p style={{ color:MUTED, fontSize:12, marginBottom:"1rem", lineHeight:1.5 }}>Cleaners who recently won contracts on CleanAlert</p>
-          {deals.map(d => <DealBadge key={d.id} deal={d} />)}
-        </div>
+        {/* DEALS */}
+        {tab==="deals" && (
+          <div>
+            <h2 style={{ color:"#fff", fontSize:18, fontWeight:800, marginBottom:"1rem" }}>Cleaner Deals & Supplies</h2>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16 }}>
+              {SEED_DEALS.map(d=>(
+                <div key={d.id} style={{ background:"#fff", borderRadius:12, padding:"1.25rem", border:"1px solid #e5e7eb" }}>
+                  <div style={{ marginBottom:10 }}><DealBadge color={d.color} label={d.badge} /></div>
+                  <div style={{ color:NAVY, fontWeight:800, fontSize:15, marginBottom:4 }}>{d.title}</div>
+                  <div style={{ color:"#6b7280", fontSize:12, marginBottom:8 }}>{d.brand}</div>
+                  <p style={{ color:"#374151", fontSize:13, lineHeight:1.5, marginBottom:12 }}>{d.description}</p>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <span style={{ color:"#15803d", fontWeight:800, fontSize:14 }}>{d.value}</span>
+                    <button style={{ background:NAVY, color:CYAN, border:`1px solid ${CYAN}`, borderRadius:6, padding:"5px 14px", fontSize:12, fontWeight:700, cursor:"pointer" }}>View Deal</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* MY BIDS */}
+        {tab==="mine" && (
+          <div>
+            <h2 style={{ color:"#fff", fontSize:18, fontWeight:800, marginBottom:"1rem" }}>My Bids</h2>
+            {myContracts.length===0
+              ? <div style={{ background:"#fff", borderRadius:12, padding:"2.5rem", textAlign:"center", color:"#6b7280", border:"1px solid #e5e7eb" }}>No bids placed yet. <button onClick={()=>setTab("feed")} style={{ color:CYAN, background:"none", border:"none", cursor:"pointer", fontWeight:700 }}>Browse jobs →</button></div>
+              : myContracts.map(c=>(
+                <div key={c.id} style={{ background:"#fff", borderRadius:12, marginBottom:12, padding:"1.25rem", border:"1px solid #e5e7eb" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                    <div>
+                      <div style={{ color:NAVY, fontWeight:700, fontSize:15 }}>{c.title}</div>
+                      <div style={{ color:"#6b7280", fontSize:13, marginTop:4 }}>{c.location} · {c.category}</div>
+                    </div>
+                    <span style={{
+                      background:c.response_status==="accepted"?"#dcfce7":c.response_status==="rejected"?"#fee2e2":"#fef9c3",
+                      color:c.response_status==="accepted"?"#166534":c.response_status==="rejected"?"#dc2626":"#92400e",
+                      fontSize:11, padding:"3px 10px", borderRadius:4, fontWeight:700
+                    }}>{(c.response_status||"pending").toUpperCase()}</span>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        )}
+
       </div>
 
-      {/* EXPRESS INTEREST MODAL */}
+      {/* MODAL */}
       {modal && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.75)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:100, padding:"1rem" }} onClick={e => e.target===e.currentTarget&&setModal(null)}>
-          <div style={{ background:SURFACE, border:`1px solid ${BORDER}`, borderRadius:18, padding:"2rem", width:"100%", maxWidth:460 }}>
-            <div style={{ color:TEXT, fontSize:19, fontWeight:800, marginBottom:"0.35rem" }}>Express Interest</div>
-            <div style={{ color:MUTED, fontSize:14, marginBottom:"1.25rem" }}>{modal.title} · {modal.location}</div>
-            {modal._seed ? (
-              <div style={{ background:`rgba(124,58,237,0.1)`, border:`1px solid rgba(124,58,237,0.3)`, borderRadius:10, padding:"1rem", color:"#a78bfa", fontSize:14, marginBottom:"1.25rem" }}>
-                This is a sample contract. Sign up as a cleaner to express interest in real contracts.
-              </div>
-            ) : (
-              <>
-                <textarea
-                  style={{ width:"100%", padding:"0.75rem 1rem", background:NAVY, border:`1px solid ${BORDER}`, borderRadius:10, color:TEXT, fontSize:14, boxSizing:"border-box", outline:"none", resize:"vertical", minHeight:90, marginBottom:"1rem" }}
-                  placeholder="Introduce your business — why are you the right fit for this contract?"
-                  value={modalForm.message}
-                  onChange={e => setModalForm(f => ({ ...f, message:e.target.value }))}
-                />
-                <label style={{ display:"flex", alignItems:"center", gap:8, color:MUTED, fontSize:13, marginBottom:"1.5rem", cursor:"pointer" }}>
-                  <input type="checkbox" checked={modalForm.share_deal} onChange={e => setModalForm(f => ({ ...f, share_deal:e.target.checked }))} />
-                  Share this deal publicly if accepted (helps show the marketplace is active)
-                </label>
-              </>
-            )}
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:999, padding:"1rem" }}>
+          <div style={{ background:"#fff", borderRadius:14, padding:"2rem", maxWidth:460, width:"100%", border:"1px solid #e5e7eb" }}>
+            <h3 style={{ color:NAVY, fontSize:17, fontWeight:800, marginBottom:4 }}>Express Interest</h3>
+            <p style={{ color:"#6b7280", fontSize:13, marginBottom:"1.25rem" }}>{modal.title} · {modal.location}</p>
+            <div style={{ marginBottom:12 }}>
+              <label style={{ display:"block", color:"#374151", fontSize:13, fontWeight:600, marginBottom:5 }}>Your Message</label>
+              <textarea style={{...inp,minHeight:90,resize:"vertical"}} placeholder="Introduce yourself and why you're a great fit…" value={responseMsg[modal.id]||""} onChange={e=>setResponseMsg(p=>({...p,[modal.id]:e.target.value}))} />
+            </div>
+            <div style={{ marginBottom:"1.5rem" }}>
+              <label style={{ display:"block", color:"#374151", fontSize:13, fontWeight:600, marginBottom:5 }}>Your Quote (optional)</label>
+              <input style={inp} placeholder="$150" value={responseQuote[modal.id]||""} onChange={e=>setResponseQuote(p=>({...p,[modal.id]:e.target.value}))} />
+            </div>
             <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => setModal(null)} style={{ padding:"0.75rem 1.25rem", background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, borderRadius:10, cursor:"pointer", fontSize:14 }}>Cancel</button>
-              <button onClick={submitInterest} disabled={submitting} style={{ flex:1, padding:"0.75rem", background:CYAN, color:NAVY, fontWeight:700, border:"none", borderRadius:10, cursor:"pointer", fontSize:15 }}>
-                {modal._seed ? "Sign Up to Apply →" : submitting ? "Sending…" : "Send Interest →"}
-              </button>
+              <button onClick={()=>setModal(null)} style={{ flex:1, background:"#f3f4f6", color:"#374151", border:"1px solid #e5e7eb", borderRadius:7, padding:"0.75rem", fontSize:14, fontWeight:600, cursor:"pointer" }}>Cancel</button>
+              {modal.isSeed
+                ? <button style={{ flex:2, background:"#e5e7eb", color:"#9ca3af", border:"none", borderRadius:7, padding:"0.75rem", fontSize:14, fontWeight:600, cursor:"default" }}>Sample — Login to Bid</button>
+                : <button onClick={()=>sendResponse(modal.id)} style={{ flex:2, background:CYAN, color:NAVY, border:"none", borderRadius:7, padding:"0.75rem", fontSize:14, fontWeight:800, cursor:"pointer" }}>Send Bid →</button>
+              }
             </div>
           </div>
         </div>
