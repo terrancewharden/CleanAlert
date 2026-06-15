@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 import Logo from "../components/Logo.jsx";
 
 const CYAN="#00d4ff",NAVY="#0a1628",SURFACE="#0f2044",BORDER="#1e3a6e",GREEN="#00e096",GOLD="#ffd700",MUTED="#6b8cba",TEXT="#e8f4ff";
@@ -42,11 +43,22 @@ const howCleaner = [
 ];
 
 export default function Landing() {
+  const { user } = useAuth();
   const nav = useNavigate();
 
   return (
     <div style={{ background:NAVY, fontFamily:"system-ui,sans-serif", color:TEXT, minHeight:"100vh" }}>
       <style>{CSS}</style>
+
+      {/* ADMIN PREVIEW BAR */}
+      {user && (
+        <div style={{ background:"#7c3aed", padding:"0.6rem 1.5rem", display:"flex", alignItems:"center", gap:"1.5rem", flexWrap:"wrap" }}>
+          <span style={{ color:"#fff", fontSize:13, fontWeight:700 }}>👑 Admin Preview</span>
+          <button onClick={() => nav("/cleaner")} style={{ background:"rgba(255,255,255,0.15)", color:"#fff", border:"none", borderRadius:8, padding:"4px 14px", fontSize:13, cursor:"pointer", fontWeight:600 }}>Cleaner Dashboard</button>
+          <button onClick={() => nav("/buyer")} style={{ background:"rgba(255,255,255,0.15)", color:"#fff", border:"none", borderRadius:8, padding:"4px 14px", fontSize:13, cursor:"pointer", fontWeight:600 }}>Buyer Dashboard</button>
+          <button onClick={() => nav("/admin")} style={{ background:"rgba(255,255,255,0.15)", color:"#fff", border:"none", borderRadius:8, padding:"4px 14px", fontSize:13, cursor:"pointer", fontWeight:600 }}>Admin Panel</button>
+        </div>
+      )}
 
       {/* NAV */}
       <nav style={{ background:SURFACE, borderBottom:`1px solid ${BORDER}`, padding:"1rem 2rem", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:50 }}>
