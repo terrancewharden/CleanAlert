@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import Logo from "../components/Logo.jsx";
+import ContractCard from "../components/ContractCard.jsx";
 
 const CYAN="#00d4ff",NAVY="#0a1628",SURFACE="#0f2044",BORDER="#1e3a6e",GOLD="#ffd700",GREEN="#00e096",PURPLE="#7c3aed",MUTED="#6b8cba",TEXT="#e8f4ff",LABEL="#a0b4cc";
 
@@ -60,53 +61,6 @@ function DealBadge({ deal }) {
       </div>
       <div style={{ color:TEXT, fontWeight:600, fontSize:13 }}>{deal.cleaner}</div>
       <div style={{ color:MUTED, fontSize:12, marginTop:2 }}>{deal.type}</div>
-    </div>
-  );
-}
-
-function ContractCard({ contract, onExpress, isNew }) {
-  return (
-    <div style={{
-      background:SURFACE,
-      border:`1px solid ${isNew ? CYAN : BORDER}`,
-      borderRadius:16,
-      padding:"1.5rem",
-      marginBottom:"1rem",
-      boxShadow: isNew ? `0 0 20px rgba(0,212,255,.15)` : "none",
-      animation:"fadeUp .35s ease",
-      position:"relative",
-      overflow:"hidden",
-    }}>
-      {contract._seed && (
-        <div style={{ position:"absolute", top:12, right:12, background:"rgba(124,58,237,0.2)", color:"#a78bfa", fontSize:10, padding:"2px 8px", borderRadius:10, fontWeight:700, border:"1px solid rgba(124,58,237,0.3)" }}>SAMPLE</div>
-      )}
-      {isNew && (
-        <div style={{ color:CYAN, fontSize:11, fontWeight:700, marginBottom:6 }}>🔵 NEW CONTRACT</div>
-      )}
-      <div style={{ color:TEXT, fontWeight:700, fontSize:17, marginBottom:"0.75rem", paddingRight: contract._seed ? 60 : 0 }}>{contract.title}</div>
-      <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:"0.85rem" }}>
-        <Tag>{contract.service_type}</Tag>
-        <Tag>📍 {contract.location}</Tag>
-        {contract.frequency && <Tag>{contract.frequency}</Tag>}
-        {contract.sq_footage && <Tag>{contract.sq_footage}</Tag>}
-        {contract.duration_months && <Tag color={GOLD}>📅 {contract.duration_months}mo contract</Tag>}
-      </div>
-      {contract.notes && (
-        <p style={{ color:LABEL, fontSize:13, lineHeight:1.6, marginBottom:"1rem" }}>{contract.notes}</p>
-      )}
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10 }}>
-        <span style={{ color:GREEN, fontWeight:800, fontSize:18 }}>{contract.budget || "Budget TBD"}</span>
-        <button
-          onClick={() => onExpress(contract)}
-          style={{
-            background:CYAN, color:NAVY, border:"none", borderRadius:12,
-            padding:"0.65rem 1.5rem", fontWeight:700, fontSize:15, cursor:"pointer",
-            animation:"pulseRing 2s infinite",
-          }}
-        >
-          Express Interest →
-        </button>
-      </div>
     </div>
   );
 }
