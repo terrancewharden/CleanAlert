@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import Logo from "../components/Logo.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import Logo from "../components/Logo.jsx";
 
 const S = {
   page: { minHeight: "100vh", background: "#0a1628", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui,sans-serif", padding: "2rem 1rem" },
   card: { background: "#0f2044", border: "1px solid #1e3a6e", borderRadius: 16, padding: "2.5rem 2rem", width: "100%", maxWidth: 440 },
-  logo: { color: "#00d4ff", fontSize: 28, fontWeight: 800, textAlign: "center", marginBottom: "0.25rem" },
   sub: { color: "#6b8cba", fontSize: 14, textAlign: "center", marginBottom: "2rem" },
   label: { display: "block", color: "#a0b4cc", fontSize: 13, marginBottom: 6 },
   input: { width: "100%", padding: "0.75rem 1rem", background: "#0a1628", border: "1px solid #1e3a6e", borderRadius: 10, color: "#e8f4ff", fontSize: 15, boxSizing: "border-box", outline: "none", marginBottom: "1.25rem" },
+  pwWrap: { position: "relative", marginBottom: "1.25rem" },
+  pwInput: { width: "100%", padding: "0.75rem 3rem 0.75rem 1rem", background: "#0a1628", border: "1px solid #1e3a6e", borderRadius: 10, color: "#e8f4ff", fontSize: 15, boxSizing: "border-box", outline: "none" },
+  eyeBtn: { position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#6b8cba", padding: 4, display: "flex", alignItems: "center" },
   types: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: "1.5rem" },
   typeBtn: (active) => ({ padding: "1rem", borderRadius: 12, border: `2px solid ${active ? "#00d4ff" : "#1e3a6e"}`, background: active ? "rgba(0,212,255,0.08)" : "#0a1628", color: active ? "#00d4ff" : "#6b8cba", cursor: "pointer", textAlign: "center", fontWeight: 600, fontSize: 15 }),
   typeIcon: { fontSize: 24, marginBottom: 4 },
@@ -20,11 +22,22 @@ const S = {
   note: { color: "#6b8cba", fontSize: 12, textAlign: "center", marginBottom: "1.5rem" },
 };
 
+const EyeIcon = ({ open }) => open ? (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+  </svg>
+) : (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+);
+
 export default function Register() {
   const { login } = useAuth();
   const nav = useNavigate();
   const [userType, setUserType] = useState("buyer");
   const [form, setForm] = useState({ name: "", email: "", password: "", company_name: "", location: "" });
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -42,14 +55,14 @@ export default function Register() {
     setLoading(false);
     if (!r.ok) return setError(data.error || "Registration failed");
     login(data.token, data.user);
-    if (userType === "cleaner") nav("/subscribe");
+    if (userType === "cleaner") nav("/cleaner");
     else nav("/buyer");
   };
 
   return (
     <div style={S.page}>
       <div style={S.card}>
-        <Logo size={36} style={{justifyContent:"center",marginBottom:"0.25rem"}} />
+        <Logo size={36} style={{ justifyContent: "center", marginBottom: "0.25rem" }} />
         <div style={S.sub}>Create your account</div>
         {error && <div style={S.err}>{error}</div>}
 
@@ -63,7 +76,7 @@ export default function Register() {
         </div>
 
         {userType === "cleaner" && (
-          <div style={S.note}>🔒 Cleaners get a 7-day free trial, then $29/mo to access leads.</div>
+          <div style={S.note}>🔒 Free access during beta.</div>
         )}
 
         <form onSubmit={submit}>
@@ -72,16 +85,19 @@ export default function Register() {
           <label style={S.label}>Email</label>
           <input style={S.input} type="email" value={form.email} onChange={set("email")} required />
           <label style={S.label}>Password</label>
-          <input style={S.input} type="password" value={form.password} onChange={set("password")} required minLength={6} />
+          <div style={S.pwWrap}>
+            <input style={S.pwInput} type={showPw ? "text" : "password"} value={form.password} onChange={set("password")} required minLength={6} />
+            <button type="button" style={S.eyeBtn} onClick={() => setShowPw(v => !v)}>
+              <EyeIcon open={showPw} />
+            </button>
+          </div>
           <label style={S.label}>Company / Business Name</label>
           <input style={S.input} value={form.company_name} onChange={set("company_name")} />
           <label style={S.label}>Location (City, State)</label>
           <input style={S.input} value={form.location} onChange={set("location")} />
           <button style={S.btn} disabled={loading}>{loading ? "Creating account…" : "Create Account"}</button>
         </form>
-        <div style={S.foot}>
-          Already have an account? <Link to="/login" style={S.link}>Sign in</Link>
-        </div>
+        <div style={S.foot}>Already have an account? <Link to="/login" style={S.link}>Sign in</Link></div>
       </div>
     </div>
   );

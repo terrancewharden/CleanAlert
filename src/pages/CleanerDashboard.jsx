@@ -1,208 +1,241 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import Logo from "../components/Logo.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import Logo from "../components/Logo.jsx";
 
 const CYAN="#00d4ff",NAVY="#0a1628",SURFACE="#0f2044",BORDER="#1e3a6e",GOLD="#ffd700",GREEN="#00e096",PURPLE="#7c3aed",MUTED="#6b8cba",TEXT="#e8f4ff",LABEL="#a0b4cc";
 
-// Keyframes injected once
 const CSS = `
 @keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(0,212,255,.5)}70%{box-shadow:0 0 0 14px rgba(0,212,255,0)}100%{box-shadow:0 0 0 0 rgba(0,212,255,0)}}
+@keyframes pulseGold{0%{box-shadow:0 0 0 0 rgba(255,215,0,.4)}70%{box-shadow:0 0 0 10px rgba(255,215,0,0)}100%{box-shadow:0 0 0 0 rgba(255,215,0,0)}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
 `;
 
-const S = {
-  page:{minHeight:"100vh",background:NAVY,fontFamily:"system-ui,sans-serif",color:TEXT},
-  nav:{background:SURFACE,borderBottom:`1px solid ${BORDER}`,padding:"1rem 1.5rem",display:"flex",alignItems:"center",justifyContent:"space-between"},
-  logo:{color:CYAN,fontWeight:800,fontSize:20},
-  navRight:{display:"flex",gap:12,alignItems:"center"},
-  navBtn:{background:"transparent",color:MUTED,border:`1px solid ${BORDER}`,borderRadius:8,padding:"6px 14px",cursor:"pointer",fontSize:13},
-  layout:{display:"flex",gap:0,minHeight:"calc(100vh - 61px)"},
-  main:{flex:1,padding:"1.5rem",overflowY:"auto"},
-  sidebar:{width:280,background:SURFACE,borderLeft:`1px solid ${BORDER}`,padding:"1.25rem",overflowY:"auto"},
-  banner:{background:"linear-gradient(90deg,rgba(0,212,255,.15),rgba(0,212,255,.05))",border:`1px solid ${CYAN}`,borderRadius:12,padding:"0.85rem 1.25rem",marginBottom:"1.25rem",display:"flex",alignItems:"center",gap:10,animation:"slideDown .4s ease"},
-  bannerDot:{width:10,height:10,borderRadius:"50%",background:CYAN,animation:"pulseRing 1.5s infinite"},
-  bannerText:{color:CYAN,fontWeight:600,fontSize:14},
-  tabs:{display:"flex",gap:8,marginBottom:"1.25rem"},
-  tab:(a)=>({padding:"0.55rem 1.1rem",borderRadius:10,border:`1px solid ${a?CYAN:BORDER}`,background:a?"rgba(0,212,255,0.08)":SURFACE,color:a?CYAN:MUTED,cursor:"pointer",fontWeight:600,fontSize:13}),
-  card:{background:SURFACE,border:`1px solid ${BORDER}`,borderRadius:14,padding:"1.25rem",marginBottom:"1rem",animation:"fadeUp .3s ease"},
-  cardNew:{border:`1px solid ${CYAN}`,boxShadow:`0 0 16px rgba(0,212,255,.15)`},
-  cardTitle:{color:TEXT,fontWeight:700,fontSize:16,marginBottom:8},
-  meta:{display:"flex",flexWrap:"wrap",gap:6,marginBottom:"0.75rem"},
-  tag:{background:"rgba(0,212,255,0.1)",color:CYAN,fontSize:11,padding:"2px 9px",borderRadius:20},
-  tagGold:{background:"rgba(255,215,0,0.1)",color:GOLD,fontSize:11,padding:"2px 9px",borderRadius:20},
-  row:{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8},
-  budget:{color:GREEN,fontWeight:700,fontSize:15},
-  expBtn:{background:CYAN,color:NAVY,border:"none",borderRadius:10,padding:"0.6rem 1.25rem",fontWeight:700,fontSize:14,cursor:"pointer",animation:"pulseRing 2s infinite"},
-  modal:{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:"1rem"},
-  modalCard:{background:SURFACE,border:`1px solid ${BORDER}`,borderRadius:16,padding:"2rem",width:"100%",maxWidth:440},
-  modalTitle:{color:TEXT,fontSize:18,fontWeight:700,marginBottom:"0.5rem"},
-  modalSub:{color:MUTED,fontSize:13,marginBottom:"1.25rem"},
-  input:{width:"100%",padding:"0.7rem 1rem",background:NAVY,border:`1px solid ${BORDER}`,borderRadius:10,color:TEXT,fontSize:14,boxSizing:"border-box",outline:"none",marginBottom:"1rem"},
-  textarea:{width:"100%",padding:"0.7rem 1rem",background:NAVY,border:`1px solid ${BORDER}`,borderRadius:10,color:TEXT,fontSize:14,boxSizing:"border-box",outline:"none",resize:"vertical",minHeight:80,marginBottom:"1rem"},
-  checkbox:{display:"flex",alignItems:"center",gap:8,color:MUTED,fontSize:13,marginBottom:"1.25rem",cursor:"pointer"},
-  modalBtns:{display:"flex",gap:10},
-  submitBtn:{flex:1,padding:"0.75rem",background:CYAN,color:NAVY,fontWeight:700,border:"none",borderRadius:10,cursor:"pointer",fontSize:15},
-  cancelBtn:{padding:"0.75rem 1.25rem",background:"transparent",color:MUTED,border:`1px solid ${BORDER}`,borderRadius:10,cursor:"pointer",fontSize:14},
-  dealBadge:{background:"linear-gradient(135deg,rgba(0,212,255,.12),rgba(124,58,237,.12))",border:`1px solid ${BORDER}`,borderRadius:12,padding:"0.85rem",marginBottom:"0.75rem",animation:"fadeUp .4s ease"},
-  dealAmount:{color:GREEN,fontWeight:800,fontSize:18},
-  dealName:{color:TEXT,fontSize:13,fontWeight:600},
-  dealType:{color:MUTED,fontSize:12},
-  sideTitle:{color:MUTED,fontSize:12,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"0.75rem"},
-  myContractCard:{background:NAVY,border:`1px solid ${BORDER}`,borderRadius:12,padding:"1rem",marginBottom:"0.75rem"},
-  renewAlert:{background:"rgba(255,215,0,0.08)",border:`1px solid ${GOLD}`,borderRadius:8,padding:"0.5rem 0.75rem",marginTop:"0.5rem",color:GOLD,fontSize:12},
-};
-
-const MOCK_DEALS = [
-  { id:1, cleaner:"Apex Clean Co.", type:"Office 5,200 sqft", monthly:"$1,400" },
-  { id:2, cleaner:"SparkPro Services", type:"Warehouse Weekly", monthly:"$950" },
-  { id:3, cleaner:"Elite Facility Group", type:"Medical Daily", monthly:"$3,200" },
-  { id:4, cleaner:"BrightShine LLC", type:"Retail 3x/week", monthly:"$780" },
+const SEED_CARDS = [
+  { id:"seed-1", title:"Weekly Office Cleaning — Downtown HQ", location:"Philadelphia, PA", service_type:"Office", sq_footage:"4,200 sq ft", frequency:"3x/week", budget:"$1,100/mo", duration_months:12, notes:"Need bonded and insured crew. Access via lobby after 6pm.", _seed:true },
+  { id:"seed-2", title:"Warehouse Deep Clean + Maintenance", location:"Camden, NJ", service_type:"Warehouse", sq_footage:"18,000 sq ft", frequency:"Weekly", budget:"$2,400/mo", duration_months:6, notes:"Heavy equipment areas require industrial cleaning products.", _seed:true },
+  { id:"seed-3", title:"Medical Office Sanitization", location:"King of Prussia, PA", service_type:"Medical", sq_footage:"2,800 sq ft", frequency:"Daily", budget:"$3,200/mo", duration_months:24, notes:"Must follow OSHA standards. References required.", _seed:true },
 ];
+
+const SEED_DEALS = [
+  { id:1, cleaner:"Apex Clean Co.", type:"Office · 5,200 sqft", monthly:"$1,400/mo", badge:"🏆" },
+  { id:2, cleaner:"SparkPro Services", type:"Warehouse · Weekly", monthly:"$950/mo", badge:"⭐" },
+  { id:3, cleaner:"Elite Facility Group", type:"Medical · Daily", monthly:"$3,200/mo", badge:"💎" },
+  { id:4, cleaner:"BrightShine LLC", type:"Retail · 3x/week", monthly:"$780/mo", badge:"🥇" },
+  { id:5, cleaner:"ProClean Solutions", type:"School · Weekly", monthly:"$1,850/mo", badge:"🏅" },
+];
+
+function Tag({ children, color = CYAN }) {
+  return (
+    <span style={{ background:`rgba(${color===GOLD?"255,215,0":color===GREEN?"0,224,150":"0,212,255"},.12)`, color, fontSize:11, padding:"3px 10px", borderRadius:20, fontWeight:600, whiteSpace:"nowrap" }}>
+      {children}
+    </span>
+  );
+}
+
+function DealBadge({ deal }) {
+  return (
+    <div style={{
+      background:`linear-gradient(135deg, ${SURFACE}, rgba(255,215,0,0.05))`,
+      border:`1px solid rgba(255,215,0,0.35)`,
+      borderRadius:14,
+      padding:"1rem",
+      marginBottom:"0.75rem",
+      animation:"fadeUp .4s ease",
+      position:"relative",
+      overflow:"hidden",
+    }}>
+      {/* shimmer bar */}
+      <div style={{
+        position:"absolute", top:0, left:0, right:0, height:2,
+        background:`linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
+        backgroundSize:"200% auto",
+        animation:"shimmer 2.5s linear infinite",
+      }} />
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+        <span style={{ fontSize:20 }}>{deal.badge}</span>
+        <span style={{ color:GOLD, fontWeight:800, fontSize:16, animation:"pulseGold 3s infinite" }}>{deal.monthly}</span>
+      </div>
+      <div style={{ color:TEXT, fontWeight:600, fontSize:13 }}>{deal.cleaner}</div>
+      <div style={{ color:MUTED, fontSize:12, marginTop:2 }}>{deal.type}</div>
+    </div>
+  );
+}
+
+function ContractCard({ contract, onExpress, isNew }) {
+  return (
+    <div style={{
+      background:SURFACE,
+      border:`1px solid ${isNew ? CYAN : BORDER}`,
+      borderRadius:16,
+      padding:"1.5rem",
+      marginBottom:"1rem",
+      boxShadow: isNew ? `0 0 20px rgba(0,212,255,.15)` : "none",
+      animation:"fadeUp .35s ease",
+      position:"relative",
+      overflow:"hidden",
+    }}>
+      {contract._seed && (
+        <div style={{ position:"absolute", top:12, right:12, background:"rgba(124,58,237,0.2)", color:"#a78bfa", fontSize:10, padding:"2px 8px", borderRadius:10, fontWeight:700, border:"1px solid rgba(124,58,237,0.3)" }}>SAMPLE</div>
+      )}
+      {isNew && (
+        <div style={{ color:CYAN, fontSize:11, fontWeight:700, marginBottom:6 }}>🔵 NEW CONTRACT</div>
+      )}
+      <div style={{ color:TEXT, fontWeight:700, fontSize:17, marginBottom:"0.75rem", paddingRight: contract._seed ? 60 : 0 }}>{contract.title}</div>
+      <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:"0.85rem" }}>
+        <Tag>{contract.service_type}</Tag>
+        <Tag>📍 {contract.location}</Tag>
+        {contract.frequency && <Tag>{contract.frequency}</Tag>}
+        {contract.sq_footage && <Tag>{contract.sq_footage}</Tag>}
+        {contract.duration_months && <Tag color={GOLD}>📅 {contract.duration_months}mo contract</Tag>}
+      </div>
+      {contract.notes && (
+        <p style={{ color:LABEL, fontSize:13, lineHeight:1.6, marginBottom:"1rem" }}>{contract.notes}</p>
+      )}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:10 }}>
+        <span style={{ color:GREEN, fontWeight:800, fontSize:18 }}>{contract.budget || "Budget TBD"}</span>
+        <button
+          onClick={() => onExpress(contract)}
+          style={{
+            background:CYAN, color:NAVY, border:"none", borderRadius:12,
+            padding:"0.65rem 1.5rem", fontWeight:700, fontSize:15, cursor:"pointer",
+            animation:"pulseRing 2s infinite",
+          }}
+        >
+          Express Interest →
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function CleanerDashboard() {
   const { user, authFetch, logout } = useAuth();
   const nav = useNavigate();
   const [tab, setTab] = useState("leads");
-  const [contracts, setContracts] = useState([]);
+  const [liveContracts, setLiveContracts] = useState([]);
   const [myContracts, setMyContracts] = useState([]);
-  const [deals, setDeals] = useState(MOCK_DEALS);
+  const [deals, setDeals] = useState(SEED_DEALS);
   const [modal, setModal] = useState(null);
-  const [modalForm, setModalForm] = useState({ message: "", share_deal: false });
+  const [modalForm, setModalForm] = useState({ message:"", share_deal:false });
   const [newIds, setNewIds] = useState(new Set());
   const [submitting, setSubmitting] = useState(false);
-  const prevCount = useRef(0);
 
   useEffect(() => {
-    style();
+    const el = document.createElement("style");
+    el.textContent = CSS;
+    document.head.appendChild(el);
     loadLeads();
     loadMyContracts();
     const iv = setInterval(loadLeads, 15000);
-    return () => clearInterval(iv);
+    return () => { clearInterval(iv); document.head.removeChild(el); };
   }, []);
 
-  const style = () => {
-    if (!document.getElementById("ca-styles")) {
-      const el = document.createElement("style");
-      el.id = "ca-styles"; el.textContent = CSS;
-      document.head.appendChild(el);
-    }
-  };
-
   const loadLeads = async () => {
-    const r = await authFetch("/api/contracts");
-    if (r.ok) {
-      const data = await r.json();
-      setContracts(prev => {
-        if (data.length > prev.length) {
-          const prevIds = new Set(prev.map(c => c.id));
-          setNewIds(new Set(data.filter(c => !prevIds.has(c.id)).map(c => c.id)));
-          setTimeout(() => setNewIds(new Set()), 8000);
+    try {
+      const r = await authFetch("/api/contracts");
+      if (r.ok) {
+        const data = await r.json();
+        if (Array.isArray(data)) {
+          setLiveContracts(prev => {
+            const prevIds = new Set(prev.map(c => c.id));
+            const fresh = data.filter(c => !prevIds.has(c.id));
+            if (fresh.length) { setNewIds(new Set(fresh.map(c => c.id))); setTimeout(() => setNewIds(new Set()), 8000); }
+            return data;
+          });
         }
-        return data;
-      });
-    }
+      }
+    } catch(e) {}
   };
 
   const loadMyContracts = async () => {
-    const r = await authFetch("/api/contracts/my");
-    if (r.ok) setMyContracts(await r.json());
+    try {
+      const r = await authFetch("/api/contracts/my");
+      if (r.ok) { const d = await r.json(); if (Array.isArray(d)) setMyContracts(d); }
+    } catch(e) {}
   };
 
-  const openModal = (contract) => {
-    setModal(contract);
-    setModalForm({ message: "", share_deal: false });
-  };
+  // Combine seed cards + live contracts (seeds first so feed always looks active)
+  const allContracts = [...liveContracts, ...SEED_CARDS.filter(s => !liveContracts.some(l => l.id === s.id))];
+
+  const openModal = (contract) => { setModal(contract); setModalForm({ message:"", share_deal:false }); };
 
   const submitInterest = async () => {
+    if (modal._seed) { setModal(null); return; } // seed cards don't submit
     setSubmitting(true);
-    const r = await authFetch(`/api/contracts/${modal.id}/respond`, {
-      method: "POST",
-      body: JSON.stringify(modalForm),
-    });
+    const r = await authFetch(`/api/contracts/${modal.id}/respond`, { method:"POST", body:JSON.stringify(modalForm) });
     setSubmitting(false);
     if (r.ok) {
-      setContracts(p => p.filter(c => c.id !== modal.id));
-      // Simulate deal badge appearing
+      setLiveContracts(p => p.filter(c => c.id !== modal.id));
       if (modalForm.share_deal) {
-        setTimeout(() => {
-          setDeals(p => [{ id: Date.now(), cleaner: user?.company_name || user?.name, type: `${modal.service_type}`, monthly: modal.budget }, ...p]);
-        }, 4000);
+        setTimeout(() => setDeals(p => [{ id:Date.now(), cleaner:user?.company_name||user?.name||"You", type:modal.service_type, monthly:modal.budget||"TBD", badge:"🏆" }, ...p]), 4000);
       }
       setModal(null);
     }
   };
 
-  const hasNewLeads = newIds.size > 0;
+  const hasNew = newIds.size > 0;
+
+  const NAV = { background:SURFACE, borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" };
+  const TAB = (a) => ({ padding:"0.6rem 1.25rem", borderRadius:10, border:`1px solid ${a?CYAN:BORDER}`, background:a?`rgba(0,212,255,0.08)`:SURFACE, color:a?CYAN:MUTED, cursor:"pointer", fontWeight:700, fontSize:13 });
 
   return (
-    <div style={S.page}>
+    <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"system-ui,sans-serif", color:TEXT }}>
       <style>{CSS}</style>
-      <nav style={S.nav}>
-        <Logo size={28} />
-        <div style={S.navRight}>
-          <span style={{ color: MUTED, fontSize: 13 }}>{user?.company_name || user?.name}</span>
-          {user?.subscription_status !== "active" && (
-            <button style={{ ...S.navBtn, color: GOLD, borderColor: GOLD }} onClick={() => nav("/subscribe")}>⚡ Upgrade</button>
+
+      <nav style={NAV}>
+        <Logo size={30} />
+        <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+          <span style={{ color:MUTED, fontSize:13 }}>{user?.company_name||user?.name}</span>
+          {user?.user_type === "admin" && (
+            <button onClick={() => nav("/admin")} style={{ background:"rgba(124,58,237,0.2)", color:"#a78bfa", border:"1px solid rgba(124,58,237,0.4)", borderRadius:8, padding:"5px 12px", fontSize:12, cursor:"pointer", fontWeight:700 }}>Admin</button>
           )}
-          <button style={S.navBtn} onClick={() => { logout(); nav("/login"); }}>Sign out</button>
+          <button onClick={() => { logout(); nav("/"); }} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, borderRadius:8, padding:"6px 14px", cursor:"pointer", fontSize:13 }}>Sign out</button>
         </div>
       </nav>
 
-      <div style={S.layout}>
-        <div style={S.main}>
-          {hasNewLeads && (
-            <div style={S.banner}>
-              <div style={S.bannerDot} />
-              <span style={S.bannerText}>{newIds.size} new contract{newIds.size > 1 ? "s" : ""} just posted in your area</span>
+      <div style={{ display:"flex", minHeight:"calc(100vh - 61px)" }}>
+        {/* MAIN */}
+        <div style={{ flex:1, padding:"1.5rem", overflowY:"auto" }}>
+          {hasNew && (
+            <div style={{ background:`linear-gradient(90deg,rgba(0,212,255,.15),rgba(0,212,255,.05))`, border:`1px solid ${CYAN}`, borderRadius:12, padding:"0.85rem 1.25rem", marginBottom:"1.25rem", display:"flex", alignItems:"center", gap:10, animation:"slideDown .4s ease" }}>
+              <div style={{ width:10, height:10, borderRadius:"50%", background:CYAN, animation:"pulseRing 1.5s infinite" }} />
+              <span style={{ color:CYAN, fontWeight:700, fontSize:14 }}>{newIds.size} new contract{newIds.size>1?"s":""} just posted near you</span>
             </div>
           )}
 
-          <div style={S.tabs}>
-            {[["leads","Live Leads"],["mycontracts","My Contracts"]].map(([k,l]) => (
-              <button key={k} style={S.tab(tab===k)} onClick={() => setTab(k)}>{l}</button>
+          <div style={{ display:"flex", gap:8, marginBottom:"1.25rem" }}>
+            {[["leads","🔴 Live Leads"],["mycontracts","My Contracts"]].map(([k,l]) => (
+              <button key={k} style={TAB(tab===k)} onClick={() => setTab(k)}>{l}</button>
             ))}
           </div>
 
           {tab === "leads" && (
             <>
-              {contracts.length === 0 && <p style={{ color: MUTED }}>No open contracts right now. Check back soon.</p>}
-              {contracts.map(c => (
-                <div key={c.id} style={{ ...S.card, ...(newIds.has(c.id) ? S.cardNew : {}) }}>
-                  {newIds.has(c.id) && <div style={{ color: CYAN, fontSize: 11, fontWeight: 700, marginBottom: 6 }}>🔵 NEW</div>}
-                  <div style={S.cardTitle}>{c.title}</div>
-                  <div style={S.meta}>
-                    <span style={S.tag}>{c.service_type}</span>
-                    <span style={S.tag}>📍 {c.location}</span>
-                    {c.frequency && <span style={S.tag}>{c.frequency}</span>}
-                    {c.sq_footage && <span style={S.tag}>{c.sq_footage}</span>}
-                    {c.duration_months && <span style={S.tagGold}>{c.duration_months}mo contract</span>}
-                  </div>
-                  {c.notes && <p style={{ color: LABEL, fontSize: 13, marginBottom: "0.75rem" }}>{c.notes}</p>}
-                  <div style={S.row}>
-                    <span style={S.budget}>{c.budget || "Budget TBD"}</span>
-                    <button style={S.expBtn} onClick={() => openModal(c)}>Express Interest →</button>
-                  </div>
-                </div>
+              {allContracts.map(c => (
+                <ContractCard key={c.id} contract={c} isNew={newIds.has(c.id)} onExpress={openModal} />
               ))}
             </>
           )}
 
           {tab === "mycontracts" && (
             <>
-              {myContracts.length === 0 && <p style={{ color: MUTED }}>No active contracts yet.</p>}
+              {myContracts.length === 0 && <p style={{ color:MUTED }}>No active contracts yet. Express interest in a lead to get started.</p>}
               {myContracts.map(c => (
-                <div key={c.id} style={S.myContractCard}>
-                  <div style={{ color: TEXT, fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{c.title}</div>
-                  <div style={S.meta}>
-                    <span style={S.tag}>{c.service_type}</span>
-                    <span style={S.tag}>{c.location}</span>
-                    <span style={{ ...S.tag, color: GREEN, background: "rgba(0,224,150,0.1)" }}>{c.days_remaining}d remaining</span>
+                <div key={c.id} style={{ background:SURFACE, border:`1px solid ${BORDER}`, borderRadius:14, padding:"1.25rem", marginBottom:"1rem" }}>
+                  <div style={{ color:TEXT, fontWeight:700, fontSize:16, marginBottom:8 }}>{c.title}</div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:8 }}>
+                    <Tag>{c.service_type}</Tag>
+                    <Tag>📍 {c.location}</Tag>
+                    <Tag color={c.days_remaining<=30?GOLD:GREEN}>{c.days_remaining}d remaining</Tag>
                   </div>
-                  <div style={{ color: GREEN, fontWeight: 700 }}>{c.budget}</div>
-                  {c.days_remaining <= 30 && (
-                    <div style={S.renewAlert}>⚠️ Contract ending soon — contact buyer to renew</div>
+                  <div style={{ color:GREEN, fontWeight:700, fontSize:16 }}>{c.budget}</div>
+                  {c.days_remaining<=30 && (
+                    <div style={{ background:`rgba(255,215,0,0.08)`, border:`1px solid ${GOLD}`, borderRadius:8, padding:"0.5rem 0.75rem", marginTop:"0.75rem", color:GOLD, fontSize:13 }}>
+                      ⚠️ Contract ending soon — reach out to buyer to renew
+                    </div>
                   )}
                 </div>
               ))}
@@ -210,37 +243,42 @@ export default function CleanerDashboard() {
           )}
         </div>
 
-        <div style={S.sidebar}>
-          <div style={S.sideTitle}>🏆 Claimed Deals</div>
-          {deals.map(d => (
-            <div key={d.id} style={S.dealBadge}>
-              <div style={S.dealAmount}>{d.monthly}/mo</div>
-              <div style={S.dealName}>{d.cleaner}</div>
-              <div style={S.dealType}>{d.type}</div>
-            </div>
-          ))}
+        {/* SIDEBAR — Claimed Deals */}
+        <div style={{ width:260, background:SURFACE, borderLeft:`1px solid ${BORDER}`, padding:"1.25rem", overflowY:"auto" }}>
+          <div style={{ color:MUTED, fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:"1rem" }}>🏆 Claimed Deals</div>
+          <p style={{ color:MUTED, fontSize:12, marginBottom:"1rem", lineHeight:1.5 }}>Cleaners who recently won contracts on CleanAlert</p>
+          {deals.map(d => <DealBadge key={d.id} deal={d} />)}
         </div>
       </div>
 
+      {/* EXPRESS INTEREST MODAL */}
       {modal && (
-        <div style={S.modal} onClick={e => e.target === e.currentTarget && setModal(null)}>
-          <div style={S.modalCard}>
-            <div style={S.modalTitle}>Express Interest</div>
-            <div style={S.modalSub}>{modal.title} · {modal.location}</div>
-            <textarea style={S.textarea}
-              placeholder="Introduce your business — why are you the right fit?"
-              value={modalForm.message}
-              onChange={e => setModalForm(f => ({ ...f, message: e.target.value }))}
-            />
-            <label style={S.checkbox}>
-              <input type="checkbox" checked={modalForm.share_deal}
-                onChange={e => setModalForm(f => ({ ...f, share_deal: e.target.checked }))} />
-              Share this deal publicly if we're accepted (helps other cleaners see the marketplace is active)
-            </label>
-            <div style={S.modalBtns}>
-              <button style={S.cancelBtn} onClick={() => setModal(null)}>Cancel</button>
-              <button style={S.submitBtn} onClick={submitInterest} disabled={submitting}>
-                {submitting ? "Sending…" : "Send Interest →"}
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.75)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:100, padding:"1rem" }} onClick={e => e.target===e.currentTarget&&setModal(null)}>
+          <div style={{ background:SURFACE, border:`1px solid ${BORDER}`, borderRadius:18, padding:"2rem", width:"100%", maxWidth:460 }}>
+            <div style={{ color:TEXT, fontSize:19, fontWeight:800, marginBottom:"0.35rem" }}>Express Interest</div>
+            <div style={{ color:MUTED, fontSize:14, marginBottom:"1.25rem" }}>{modal.title} · {modal.location}</div>
+            {modal._seed ? (
+              <div style={{ background:`rgba(124,58,237,0.1)`, border:`1px solid rgba(124,58,237,0.3)`, borderRadius:10, padding:"1rem", color:"#a78bfa", fontSize:14, marginBottom:"1.25rem" }}>
+                This is a sample contract. Sign up as a cleaner to express interest in real contracts.
+              </div>
+            ) : (
+              <>
+                <textarea
+                  style={{ width:"100%", padding:"0.75rem 1rem", background:NAVY, border:`1px solid ${BORDER}`, borderRadius:10, color:TEXT, fontSize:14, boxSizing:"border-box", outline:"none", resize:"vertical", minHeight:90, marginBottom:"1rem" }}
+                  placeholder="Introduce your business — why are you the right fit for this contract?"
+                  value={modalForm.message}
+                  onChange={e => setModalForm(f => ({ ...f, message:e.target.value }))}
+                />
+                <label style={{ display:"flex", alignItems:"center", gap:8, color:MUTED, fontSize:13, marginBottom:"1.5rem", cursor:"pointer" }}>
+                  <input type="checkbox" checked={modalForm.share_deal} onChange={e => setModalForm(f => ({ ...f, share_deal:e.target.checked }))} />
+                  Share this deal publicly if accepted (helps show the marketplace is active)
+                </label>
+              </>
+            )}
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={() => setModal(null)} style={{ padding:"0.75rem 1.25rem", background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, borderRadius:10, cursor:"pointer", fontSize:14 }}>Cancel</button>
+              <button onClick={submitInterest} disabled={submitting} style={{ flex:1, padding:"0.75rem", background:CYAN, color:NAVY, fontWeight:700, border:"none", borderRadius:10, cursor:"pointer", fontSize:15 }}>
+                {modal._seed ? "Sign Up to Apply →" : submitting ? "Sending…" : "Send Interest →"}
               </button>
             </div>
           </div>
