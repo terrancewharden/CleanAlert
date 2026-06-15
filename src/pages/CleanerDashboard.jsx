@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import Logo from "../components/Logo.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const CYAN="#00d4ff",NAVY="#0a1628",SURFACE="#0f2044",BORDER="#1e3a6e",GOLD="#ffd700",GREEN="#00e096",PURPLE="#7c3aed",MUTED="#6b8cba",TEXT="#e8f4ff",LABEL="#a0b4cc";
@@ -139,7 +140,7 @@ export default function CleanerDashboard() {
     <div style={S.page}>
       <style>{CSS}</style>
       <nav style={S.nav}>
-        <span style={S.logo}>CleanAlert</span>
+        <Logo size={28} />
         <div style={S.navRight}>
           <span style={{ color: MUTED, fontSize: 13 }}>{user?.company_name || user?.name}</span>
           {user?.subscription_status !== "active" && (

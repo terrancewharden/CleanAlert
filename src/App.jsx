@@ -10,8 +10,14 @@ import Admin from "./pages/Admin.jsx";
 
 function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
-  if (loading) return <div style={{ minHeight:"100vh", background:"#0a1628", display:"flex", alignItems:"center", justifyContent:"center", color:"#00d4ff", fontFamily:"system-ui" }}>Loading…</div>;
+  if (loading) return (
+    <div style={{ minHeight:"100vh", background:"#0a1628", display:"flex", alignItems:"center", justifyContent:"center", color:"#00d4ff", fontFamily:"system-ui" }}>
+      Loading…
+    </div>
+  );
   if (!user) return <Navigate to="/login" replace />;
+  // Admins can access everything
+  if (user.user_type === "admin") return children;
   if (roles && !roles.includes(user.user_type)) return <Navigate to="/" replace />;
   return children;
 }

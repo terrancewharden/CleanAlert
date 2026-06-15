@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Logo from "../components/Logo.jsx";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -35,7 +36,7 @@ export default function Subscribe() {
   if (isSuccess) return (
     <div style={S.page}>
       <div style={S.card}>
-        <div style={S.logo}>CleanAlert</div>
+        <Logo size={36} style={{justifyContent:"center",marginBottom:"0.5rem"}} />
         <div style={{ fontSize: 56, margin: "1rem 0" }}>🎉</div>
         <div style={S.success}>You're subscribed!</div>
         <p style={{ color: "#a0b4cc", marginBottom: "2rem" }}>You now have full access to incoming contract leads.</p>
@@ -47,7 +48,7 @@ export default function Subscribe() {
   return (
     <div style={S.page}>
       <div style={S.card}>
-        <div style={S.logo}>CleanAlert</div>
+        <Logo size={36} style={{justifyContent:"center",marginBottom:"0.5rem"}} />
         <div style={S.h2}>Get Full Access</div>
         <div style={S.sub}>Connect with commercial cleaning contracts in your area.</div>
 

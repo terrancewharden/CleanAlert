@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import Logo from "../components/Logo.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const S = {
@@ -39,7 +40,7 @@ export default function Login() {
   return (
     <div style={S.page}>
       <div style={S.card}>
-        <div style={S.logo}>CleanAlert</div>
+        <Logo size={36} style={{justifyContent:"center",marginBottom:"0.25rem"}} />
         <div style={S.sub}>Sign in to your account</div>
         {error && <div style={S.err}>{error}</div>}
         <form onSubmit={submit}>

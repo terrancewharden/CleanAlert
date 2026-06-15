@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNavigate } from "react-router-dom";
+import Logo from "../components/Logo.jsx";
 
 const CYAN="#00d4ff",NAVY="#0a1628",SURFACE="#0f2044",BORDER="#1e3a6e",GREEN="#00e096",GOLD="#ffd700",MUTED="#6b8cba",TEXT="#e8f4ff";
 
@@ -65,7 +66,7 @@ export default function Admin() {
   return (
     <div style={S.page}>
       <div style={S.header}>
-        <div><span style={S.logo}>CleanAlert</span><span style={S.badge}>ADMIN</span></div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><Logo size={28} /><span style={S.badge}>ADMIN</span></div>
         <button style={S.logoutBtn} onClick={() => { logout(); nav("/"); }}>Sign out</button>
       </div>
 

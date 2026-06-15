@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import Logo from "../components/Logo.jsx";
 
 const CYAN="#00d4ff",NAVY="#0a1628",SURFACE="#0f2044",BORDER="#1e3a6e",GREEN="#00e096",GOLD="#ffd700",MUTED="#6b8cba",TEXT="#e8f4ff";
 
@@ -49,7 +50,7 @@ export default function Landing() {
 
       {/* NAV */}
       <nav style={{ background:SURFACE, borderBottom:`1px solid ${BORDER}`, padding:"1rem 2rem", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:50 }}>
-        <span style={{ color:CYAN, fontWeight:800, fontSize:22 }}>CleanAlert</span>
+        <Logo size={32} />
         <div className="ca-nav-links" style={{ display:"flex", gap:"2rem" }}>
           {["Features","How It Works","For Cleaners"].map(l => (
             <a key={l} href={`#${l.toLowerCase().replace(/ /g,"-")}`} style={{ color:MUTED, textDecoration:"none", fontSize:14 }}>{l}</a>
@@ -168,7 +169,7 @@ export default function Landing() {
 
       {/* FOOTER */}
       <footer style={{ borderTop:`1px solid ${BORDER}`, padding:"2rem 1.5rem", textAlign:"center" }}>
-        <div style={{ color:CYAN, fontWeight:800, fontSize:18, marginBottom:"0.5rem" }}>CleanAlert</div>
+        <Logo size={24} style={{justifyContent:"center"}} />
         <div style={{ color:MUTED, fontSize:13 }}>Real-time commercial cleaning contract marketplace</div>
         <div style={{ display:"flex", gap:16, justifyContent:"center", marginTop:"1rem" }}>
           <button onClick={() => nav("/login")} style={{ background:"transparent", color:MUTED, border:"none", cursor:"pointer", fontSize:13 }}>Log In</button>
