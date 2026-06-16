@@ -35,16 +35,16 @@ export default function Admin() {
   const td = { color:"#111827", fontSize:13, padding:"0.7rem 0.75rem", borderBottom:"1px solid #f3f4f6" };
 
   return (
-    <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"Inter,sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"'DM Sans',sans-serif" }}>
       <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <Logo size={30} />
           <span style={{ background:"#4c1d95", color:"#fff", fontSize:11, padding:"3px 10px", borderRadius:4, fontWeight:700, letterSpacing:"0.06em" }}>ADMIN</span>
         </div>
         <div style={{ display:"flex", gap:8 }}>
-          <button onClick={()=>nav("/cleaner")} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"5px 12px", fontSize:13, cursor:"pointer", fontFamily:"Inter,sans-serif" }}>Cleaner View</button>
-          <button onClick={()=>nav("/buyer")} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"5px 12px", fontSize:13, cursor:"pointer", fontFamily:"Inter,sans-serif" }}>Buyer View</button>
-          <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"5px 12px", fontSize:13, cursor:"pointer", fontFamily:"Inter,sans-serif" }}>Sign out</button>
+          <button onClick={()=>nav("/cleaner")} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"5px 12px", fontSize:13, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Cleaner View</button>
+          <button onClick={()=>nav("/buyer")} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"5px 12px", fontSize:13, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Buyer View</button>
+          <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"5px 12px", fontSize:13, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Sign out</button>
         </div>
       </nav>
 

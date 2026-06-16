@@ -40,7 +40,7 @@ export default function Register() {
   const inputStyle = { width:"100%", padding:"0.7rem 1rem", border:"1px solid #d1d5db", borderRadius:8, color:"#111827", fontSize:15, marginBottom:"1.1rem", outline:"none" };
 
   return (
-    <div style={{ minHeight:"100vh", background:NAVY, display:"flex", alignItems:"center", justifyContent:"center", padding:"2rem 1rem", fontFamily:"Inter,sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:NAVY, display:"flex", alignItems:"center", justifyContent:"center", padding:"2rem 1rem", fontFamily:"'DM Sans',sans-serif" }}>
       <div style={{ background:"#fff", borderRadius:12, padding:"2.5rem 2rem", width:"100%", maxWidth:440, border:"1px solid #e2e8f0" }}>
         <div style={{ display:"flex", justifyContent:"center", marginBottom:"0.5rem" }}><Logo size={36} /></div>
         <p style={{ color:MUTED, fontSize:14, textAlign:"center", marginBottom:"1.75rem" }}>Create your account</p>

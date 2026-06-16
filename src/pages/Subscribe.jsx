@@ -32,10 +32,10 @@ export default function Subscribe() {
   ];
 
   return (
-    <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"Inter,sans-serif", display:"flex", flexDirection:"column" }}>
+    <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"'DM Sans',sans-serif", display:"flex", flexDirection:"column" }}>
       <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <Logo size={30} />
-        <button onClick={()=>nav(-1)} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"5px 12px", fontSize:13, cursor:"pointer", fontFamily:"Inter,sans-serif" }}>← Back</button>
+        <button onClick={()=>nav(-1)} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"5px 12px", fontSize:13, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>← Back</button>
       </nav>
 
       <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"2rem" }}>

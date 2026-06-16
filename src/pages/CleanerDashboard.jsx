@@ -84,10 +84,10 @@ export default function CleanerDashboard() {
 
   const allContracts = [...SEED_CARDS, ...liveContracts];
 
-  const inp = { width:"100%", padding:"0.65rem 0.85rem", background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:7, fontSize:13, color:"#111827", fontFamily:"Inter,sans-serif", boxSizing:"border-box" };
+  const inp = { width:"100%", padding:"0.65rem 0.85rem", background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:7, fontSize:13, color:"#111827", fontFamily:"'DM Sans',sans-serif", boxSizing:"border-box" };
 
   return (
-    <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"Inter,sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"'DM Sans',sans-serif" }}>
       <style>{shimmer}{pulse}</style>
 
       <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -103,11 +103,11 @@ export default function CleanerDashboard() {
                 fontSize:13,
                 fontWeight:tab===t?700:500,
                 cursor:"pointer",
-                fontFamily:"Inter,sans-serif"
+                fontFamily:"'DM Sans',sans-serif"
               }}>{l}</button>
             ))}
           </div>
-          <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"6px 12px", fontSize:13, cursor:"pointer", fontFamily:"Inter,sans-serif" }}>Sign out</button>
+          <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"6px 12px", fontSize:13, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Sign out</button>
         </div>
       </nav>
 

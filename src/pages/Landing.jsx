@@ -24,7 +24,7 @@ export default function Landing() {
   const { user } = useAuth();
 
   return (
-    <div style={{ background:NAVY, minHeight:"100vh", fontFamily:"Inter,sans-serif" }}>
+    <div style={{ background:NAVY, minHeight:"100vh", fontFamily:"'DM Sans',sans-serif" }}>
 
       {/* ADMIN BAR */}
       {user && (

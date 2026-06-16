@@ -64,11 +64,11 @@ export default function BuyerDashboard() {
     setLoading(false);
   };
 
-  const inp = { width:"100%", padding:"0.65rem 0.85rem", background:"rgba(255,255,255,0.07)", border:`1px solid ${BORDER}`, borderRadius:7, fontSize:14, color:"#fff", fontFamily:"Inter,sans-serif", boxSizing:"border-box" };
+  const inp = { width:"100%", padding:"0.65rem 0.85rem", background:"rgba(255,255,255,0.07)", border:`1px solid ${BORDER}`, borderRadius:7, fontSize:14, color:"#fff", fontFamily:"'DM Sans',sans-serif", boxSizing:"border-box" };
   const lbl = { display:"block", color:"#a0b4cc", fontSize:13, fontWeight:600, marginBottom:5 };
 
   return (
-    <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"Inter,sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"'DM Sans',sans-serif" }}>
       {/* NAV */}
       <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <Logo size={30} />
@@ -84,12 +84,12 @@ export default function BuyerDashboard() {
                 fontSize:13,
                 fontWeight:tab===t?700:500,
                 cursor:"pointer",
-                fontFamily:"Inter,sans-serif",
+                fontFamily:"'DM Sans',sans-serif",
                 letterSpacing:"0.01em"
               }}>{l}</button>
             ))}
           </div>
-          <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"6px 12px", fontSize:13, cursor:"pointer", fontFamily:"Inter,sans-serif" }}>Sign out</button>
+          <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"6px 12px", fontSize:13, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Sign out</button>
         </div>
       </nav>
 

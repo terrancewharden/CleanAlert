@@ -38,7 +38,7 @@ export default function Login() {
   };
 
   return (
-    <div style={{ minHeight:"100vh", background:NAVY, display:"flex", alignItems:"center", justifyContent:"center", padding:"1rem", fontFamily:"Inter,sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:NAVY, display:"flex", alignItems:"center", justifyContent:"center", padding:"1rem", fontFamily:"'DM Sans',sans-serif" }}>
       <div style={{ background:"#fff", borderRadius:12, padding:"2.5rem 2rem", width:"100%", maxWidth:420, border:"1px solid #e2e8f0" }}>
         <div style={{ display:"flex", justifyContent:"center", marginBottom:"0.5rem" }}><Logo size={36} /></div>
         <p style={{ color:MUTED, fontSize:14, textAlign:"center", marginBottom:"2rem" }}>Sign in to your account</p>
