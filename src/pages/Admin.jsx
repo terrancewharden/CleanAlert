@@ -19,8 +19,8 @@ export default function Admin() {
         const [sr,ur,ar] = await Promise.all([authFetch("/api/admin/stats"),authFetch("/api/admin/users"),authFetch("/api/admin/recent")]);
         const [s,u,a] = await Promise.all([sr.json(),ur.json(),ar.json()]);
         if (s.error) setError(`Stats: ${s.error}`); else setStats(s);
-        if (Array.isArray(u)) setUsers(u); else setError(`Users: ${u.error}`);
-        if (Array.isArray(a)) setActivity(a); else setError(`Activity: ${a.error}`);
+        if (Array.isArray(u)) setUsers(u); else setError(`Users: ${u?.error || 'Failed to load'}`);
+        if (Array.isArray(a)) setActivity(a); else setError(`Activity: ${a?.error || 'Failed to load'}`);
       } catch(e) { setError(e.message); }
     };
     load();

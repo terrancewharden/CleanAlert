@@ -47,14 +47,27 @@ router.post("/users/:id/ban", requireAuth, requireAdmin, async (req, res) => {
 
 // GET /api/admin/recent — last 20 activities
 router.get("/recent", requireAuth, requireAdmin, async (_req, res) => {
-  const [contracts, deals] = await Promise.all([
-    pool.query(`SELECT 'contract' as type, c.title as detail, u.name as actor, c.created_at
-      FROM contracts c JOIN users u ON c.buyer_id=u.id ORDER BY c.created_at DESC LIMIT 10`),
-    pool.query(`SELECT 'deal' as type, c.title as detail, u.name as actor, d.created_at
-      FROM deals d JOIN contracts c ON d.contract_id=c.id JOIN users u ON d.cleaner_id=u.id ORDER BY d.created_at DESC LIMIT 10`),
-  ]);
-  const activity = [...contracts.rows, ...deals.rows].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 20);
-  res.json(activity);
+  try {
+    const contractsResult = await pool.query(
+      `SELECT 'contract' as type, c.title as detail, u.name as actor, c.created_at
+       FROM contracts c JOIN users u ON c.buyer_id=u.id ORDER BY c.created_at DESC LIMIT 10`
+    );
+    let dealsRows = [];
+    try {
+      const dealsResult = await pool.query(
+        `SELECT 'deal' as type, c.title as detail, u.name as actor, r.created_at
+         FROM responses r JOIN contracts c ON r.contract_id=c.id JOIN users u ON r.cleaner_id=u.id
+         WHERE r.status='accepted' ORDER BY r.created_at DESC LIMIT 10`
+      );
+      dealsRows = dealsResult.rows;
+    } catch (_) { /* deals/responses may be empty — skip */ }
+    const activity = [...contractsResult.rows, ...dealsRows]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 20);
+    res.json(activity);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
