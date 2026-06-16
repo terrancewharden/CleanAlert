@@ -36,7 +36,7 @@ function DealBadge({ color, label }) {
 }
 
 export default function CleanerDashboard() {
-  const { user, authFetch, logout } = useAuth();
+  const { authFetch, logout } = useAuth();
   const nav = useNavigate();
   const [tab, setTab] = useState("feed");
   const [liveContracts, setLiveContracts] = useState([]);
@@ -74,10 +74,9 @@ export default function CleanerDashboard() {
 
   const sendResponse = async (contractId)=>{
     const msg = responseMsg[contractId]||"";
-    const quote = responseQuote[contractId]||"";
     if(!msg.trim()) return;
     await authFetch(`/api/contracts/${contractId}/respond`,{
-      method:"POST", body:JSON.stringify({ message:msg, quote })
+      method:"POST", body:JSON.stringify({ message:msg, quote:responseQuote[contractId]||"" })
     });
     setSubmitted(p=>({...p,[contractId]:true}));
     setModal(null);
@@ -91,22 +90,29 @@ export default function CleanerDashboard() {
     <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"Inter,sans-serif" }}>
       <style>{shimmer}{pulse}</style>
 
-      {/* NAV */}
       <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <Logo size={30} />
-        <div style={{ display:"flex", gap:8 }}>
-          {["feed","deals","mine"].map(t=>(
-            <button key={t} onClick={()=>setTab(t)} style={{ background:tab===t?CYAN:"transparent", color:tab===t?NAVY:MUTED, border:`1px solid ${tab===t?CYAN:BORDER}`, borderRadius:6, padding:"5px 14px", fontSize:13, fontWeight:tab===t?700:400, cursor:"pointer" }}>
-              {t==="feed"?"Job Feed":t==="deals"?"Deals":t==="mine"?"My Bids":t}
-            </button>
-          ))}
-          <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, borderRadius:6, padding:"5px 12px", fontSize:13, cursor:"pointer" }}>Sign out</button>
+        <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+          <div style={{ display:"flex", background:"#0d1f3c", border:`1px solid ${BORDER}` }}>
+            {[["feed","Job Feed"],["deals","Deals"],["mine","My Bids"]].map(([t,l])=>(
+              <button key={t} onClick={()=>setTab(t)} style={{
+                background:tab===t?CYAN:"transparent",
+                color:tab===t?NAVY:MUTED,
+                border:"none",
+                padding:"6px 18px",
+                fontSize:13,
+                fontWeight:tab===t?700:500,
+                cursor:"pointer",
+                fontFamily:"Inter,sans-serif"
+              }}>{l}</button>
+            ))}
+          </div>
+          <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"6px 12px", fontSize:13, cursor:"pointer", fontFamily:"Inter,sans-serif" }}>Sign out</button>
         </div>
       </nav>
 
       <div style={{ padding:"1.5rem" }}>
 
-        {/* FEED */}
         {tab==="feed" && (
           <div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1rem" }}>
@@ -117,22 +123,16 @@ export default function CleanerDashboard() {
               {allContracts.map(c=>(
                 <div key={c.id}>
                   <ContractCard contract={c} />
-                  {!submitted[c.id] ? (
-                    <button onClick={()=>setModal(c)} style={{
-                      width:"100%", background:CYAN, color:NAVY, border:"none", borderRadius:8,
-                      padding:"0.7rem", fontSize:13, fontWeight:800, cursor:"pointer", marginTop:8,
-                      animation:"pulse 2s infinite"
-                    }}>⚡ Express Interest</button>
-                  ) : (
-                    <div style={{ textAlign:"center", color:"#22c55e", fontSize:13, fontWeight:700, marginTop:8 }}>✓ Bid Sent</div>
-                  )}
+                  {!submitted[c.id]
+                    ? <button onClick={()=>setModal(c)} style={{ width:"100%", background:CYAN, color:NAVY, border:"none", borderRadius:8, padding:"0.7rem", fontSize:13, fontWeight:800, cursor:"pointer", marginTop:8, animation:"pulse 2s infinite" }}>⚡ Express Interest</button>
+                    : <div style={{ textAlign:"center", color:"#4ade80", fontSize:13, fontWeight:700, marginTop:8 }}>✓ Bid Sent</div>
+                  }
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* DEALS */}
         {tab==="deals" && (
           <div>
             <h2 style={{ color:"#fff", fontSize:18, fontWeight:800, marginBottom:"1rem" }}>Cleaner Deals & Supplies</h2>
@@ -153,12 +153,11 @@ export default function CleanerDashboard() {
           </div>
         )}
 
-        {/* MY BIDS */}
         {tab==="mine" && (
           <div>
             <h2 style={{ color:"#fff", fontSize:18, fontWeight:800, marginBottom:"1rem" }}>My Bids</h2>
             {myContracts.length===0
-              ? <div style={{ background:"#fff", borderRadius:12, padding:"2.5rem", textAlign:"center", color:"#6b7280", border:"1px solid #e5e7eb" }}>No bids placed yet. <button onClick={()=>setTab("feed")} style={{ color:CYAN, background:"none", border:"none", cursor:"pointer", fontWeight:700 }}>Browse jobs →</button></div>
+              ? <div style={{ background:"#0d1f3c", borderRadius:12, padding:"2.5rem", textAlign:"center", color:MUTED, border:`1px solid ${BORDER}` }}>No bids placed yet. <button onClick={()=>setTab("feed")} style={{ color:CYAN, background:"none", border:"none", cursor:"pointer", fontWeight:700 }}>Browse jobs →</button></div>
               : myContracts.map(c=>(
                 <div key={c.id} style={{ background:"#fff", borderRadius:12, marginBottom:12, padding:"1.25rem", border:"1px solid #e5e7eb" }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
@@ -177,10 +176,8 @@ export default function CleanerDashboard() {
             }
           </div>
         )}
-
       </div>
 
-      {/* MODAL */}
       {modal && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:999, padding:"1rem" }}>
           <div style={{ background:"#fff", borderRadius:14, padding:"2rem", maxWidth:460, width:"100%", border:"1px solid #e5e7eb" }}>

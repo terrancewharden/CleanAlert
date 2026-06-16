@@ -64,21 +64,32 @@ export default function BuyerDashboard() {
     setLoading(false);
   };
 
-  const inp = { width:"100%", padding:"0.65rem 0.85rem", background:"#f9fafb", border:"1px solid #e5e7eb", borderRadius:7, fontSize:14, color:"#111827", fontFamily:"Inter,sans-serif", boxSizing:"border-box" };
-  const label = { display:"block", color:"#374151", fontSize:13, fontWeight:600, marginBottom:5 };
+  const inp = { width:"100%", padding:"0.65rem 0.85rem", background:"rgba(255,255,255,0.07)", border:`1px solid ${BORDER}`, borderRadius:7, fontSize:14, color:"#fff", fontFamily:"Inter,sans-serif", boxSizing:"border-box" };
+  const lbl = { display:"block", color:"#a0b4cc", fontSize:13, fontWeight:600, marginBottom:5 };
 
   return (
     <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"Inter,sans-serif" }}>
       {/* NAV */}
       <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <Logo size={30} />
-        <div style={{ display:"flex", gap:8 }}>
-          {["post","contracts"].map(t=>(
-            <button key={t} onClick={()=>setTab(t)} style={{ background:tab===t?CYAN:"transparent", color:tab===t?NAVY:MUTED, border:`1px solid ${tab===t?CYAN:BORDER}`, borderRadius:6, padding:"5px 14px", fontSize:13, fontWeight:tab===t?700:400, cursor:"pointer" }}>
-              {t==="post"?"Post Job":"My Contracts"}
-            </button>
-          ))}
-          <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, borderRadius:6, padding:"5px 12px", fontSize:13, cursor:"pointer" }}>Sign out</button>
+        <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+          {/* SQUARE TOGGLE */}
+          <div style={{ display:"flex", background:"#0d1f3c", border:`1px solid ${BORDER}` }}>
+            {[["post","Post Job"],["contracts","My Contracts"]].map(([t,l])=>(
+              <button key={t} onClick={()=>setTab(t)} style={{
+                background:tab===t?CYAN:"transparent",
+                color:tab===t?NAVY:MUTED,
+                border:"none",
+                padding:"6px 18px",
+                fontSize:13,
+                fontWeight:tab===t?700:500,
+                cursor:"pointer",
+                fontFamily:"Inter,sans-serif",
+                letterSpacing:"0.01em"
+              }}>{l}</button>
+            ))}
+          </div>
+          <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"6px 12px", fontSize:13, cursor:"pointer", fontFamily:"Inter,sans-serif" }}>Sign out</button>
         </div>
       </nav>
 
@@ -86,46 +97,46 @@ export default function BuyerDashboard() {
 
         {/* POST JOB */}
         {tab==="post" && (
-          <div style={{ background:"#fff", borderRadius:12, padding:"2rem", border:"1px solid #e5e7eb" }}>
-            <h2 style={{ color:NAVY, fontSize:20, fontWeight:800, marginBottom:"1.5rem" }}>Post a Cleaning Job</h2>
+          <div style={{ background:"#0d1f3c", borderRadius:12, padding:"2rem", border:`1px solid ${BORDER}` }}>
+            <h2 style={{ color:"#fff", fontSize:20, fontWeight:800, marginBottom:"1.5rem" }}>Post a Cleaning Job</h2>
             <form onSubmit={submitContract} style={{ display:"grid", gap:16 }}>
               <div>
-                <label style={label}>Job Title</label>
+                <label style={lbl}>Job Title</label>
                 <input style={inp} placeholder="e.g. 3BR apartment deep clean" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} required />
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                 <div>
-                  <label style={label}>Category</label>
+                  <label style={lbl}>Category</label>
                   <select style={inp} value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>
                     {CATEGORIES.map(c=><option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={label}>Frequency</label>
+                  <label style={lbl}>Frequency</label>
                   <select style={inp} value={form.frequency} onChange={e=>setForm({...form,frequency:e.target.value})}>
                     {["One-time","Weekly","Bi-weekly","Monthly"].map(f=><option key={f}>{f}</option>)}
                   </select>
                 </div>
               </div>
               <div>
-                <label style={label}>Description</label>
+                <label style={lbl}>Description</label>
                 <textarea style={{...inp,minHeight:90,resize:"vertical"}} placeholder="Describe what needs to be cleaned..." value={form.description} onChange={e=>setForm({...form,description:e.target.value})} required />
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                 <div>
-                  <label style={label}>Location / ZIP</label>
+                  <label style={lbl}>Location / ZIP</label>
                   <input style={inp} placeholder="Philadelphia, PA 19103" value={form.location} onChange={e=>setForm({...form,location:e.target.value})} required />
                 </div>
                 <div>
-                  <label style={label}>Budget</label>
+                  <label style={lbl}>Budget</label>
                   <input style={inp} placeholder="$150" value={form.budget} onChange={e=>setForm({...form,budget:e.target.value})} />
                 </div>
               </div>
               <div>
-                <label style={label}>Preferred Date</label>
+                <label style={lbl}>Preferred Date</label>
                 <input type="date" style={inp} value={form.preferred_date} onChange={e=>setForm({...form,preferred_date:e.target.value})} />
               </div>
-              {msg && <div style={{ color:msg.startsWith("✓")?"#15803d":"#dc2626", fontSize:13, fontWeight:600 }}>{msg}</div>}
+              {msg && <div style={{ color:msg.startsWith("✓")?"#4ade80":"#f87171", fontSize:13, fontWeight:600 }}>{msg}</div>}
               <button type="submit" disabled={loading} style={{ background:CYAN, color:NAVY, border:"none", borderRadius:8, padding:"0.85rem", fontSize:15, fontWeight:800, cursor:"pointer", letterSpacing:"0.01em" }}>
                 {loading?"Posting…":"Post Job →"}
               </button>
@@ -138,7 +149,7 @@ export default function BuyerDashboard() {
           <div>
             <h2 style={{ color:"#fff", fontSize:20, fontWeight:800, marginBottom:"1rem" }}>My Posted Jobs</h2>
             {contracts.length===0
-              ? <div style={{ background:"#fff", borderRadius:12, padding:"2.5rem", textAlign:"center", color:"#6b7280", border:"1px solid #e5e7eb" }}>No jobs posted yet. <button onClick={()=>setTab("post")} style={{ color:CYAN, background:"none", border:"none", cursor:"pointer", fontWeight:700 }}>Post one →</button></div>
+              ? <div style={{ background:"#0d1f3c", borderRadius:12, padding:"2.5rem", textAlign:"center", color:MUTED, border:`1px solid ${BORDER}` }}>No jobs posted yet. <button onClick={()=>setTab("post")} style={{ color:CYAN, background:"none", border:"none", cursor:"pointer", fontWeight:700 }}>Post one →</button></div>
               : contracts.map(c=>(
                 <div key={c.id} style={{ background:"#fff", borderRadius:12, marginBottom:14, border:"1px solid #e5e7eb", overflow:"hidden" }}>
                   <div onClick={()=>loadResponses(c.id)} style={{ padding:"1.25rem", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>

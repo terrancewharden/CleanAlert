@@ -35,14 +35,13 @@ export default function Subscribe() {
     <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"Inter,sans-serif", display:"flex", flexDirection:"column" }}>
       <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <Logo size={30} />
-        <button onClick={()=>nav(-1)} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, borderRadius:6, padding:"5px 12px", fontSize:13, cursor:"pointer" }}>← Back</button>
+        <button onClick={()=>nav(-1)} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"5px 12px", fontSize:13, cursor:"pointer", fontFamily:"Inter,sans-serif" }}>← Back</button>
       </nav>
 
       <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"2rem" }}>
         <div style={{ background:"#fff", borderRadius:16, padding:"2.5rem", maxWidth:500, width:"100%", border:"1px solid #e5e7eb" }}>
-          {/* HEADER */}
           <div style={{ textAlign:"center", marginBottom:"2rem" }}>
-            <div style={{ background:`${CYAN}18`, border:`1px solid ${CYAN}40`, borderRadius:8, display:"inline-block", padding:"4px 14px", marginBottom:14 }}>
+            <div style={{ background:`${CYAN}18`, border:`1px solid ${CYAN}40`, borderRadius:4, display:"inline-block", padding:"4px 14px", marginBottom:14 }}>
               <span style={{ color:CYAN, fontSize:12, fontWeight:700, letterSpacing:"0.08em" }}>CLEANER PRO</span>
             </div>
             <div style={{ display:"flex", alignItems:"baseline", justifyContent:"center", gap:4 }}>
@@ -52,7 +51,6 @@ export default function Subscribe() {
             <p style={{ color:"#6b7280", fontSize:14, marginTop:8 }}>Everything you need to land and keep cleaning clients.</p>
           </div>
 
-          {/* PERKS */}
           <div style={{ marginBottom:"2rem" }}>
             {perks.map(([icon,title,desc])=>(
               <div key={title} style={{ display:"flex", gap:12, alignItems:"flex-start", padding:"0.6rem 0", borderBottom:"1px solid #f3f4f6" }}>
