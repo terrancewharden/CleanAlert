@@ -8,6 +8,7 @@ import contractRoutes from "./routes/contracts.js";
 import adminRoutes from "./routes/admin.js";
 import stripeRoutes from "./routes/stripe.js";
 import reviewRoutes from "./routes/reviews.js";
+import messageRoutes from "./routes/messages.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -26,6 +27,7 @@ app.use("/api/contracts", contractRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/stripe", stripeRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/messages", messageRoutes);
 
 // Serve React build
 app.use(express.static(join(__dirname, "dist")));

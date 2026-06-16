@@ -17,6 +17,9 @@ export default function BuyerDashboard() {
   const [responses, setResponses] = useState({});
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [chatDeal, setChatDeal] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [msgInput, setMsgInput] = useState("");
 
   const [form, setForm] = useState({
     business_name:"", facility_type:"Office", notes:"", location:"",
@@ -44,15 +47,43 @@ export default function BuyerDashboard() {
   };
 
   const acceptResponse = async (contractId, responseId) => {
-    await authFetch(`/api/contracts/${contractId}/accept/${responseId}`, { method:"POST" });
-    setResponses(prev => ({
-      ...prev,
-      [contractId]: prev[contractId].map(r => ({
-        ...r,
-        status: r.id===responseId ? "accepted" : r.status==="pending" ? "rejected" : r.status
-      }))
-    }));
+    const res = await authFetch(`/api/contracts/${contractId}/accept/${responseId}`, { method:"POST" });
+    const deal = await res.json();
+    // Reload responses so deal_id is populated (needed for "Message Cleaner" button)
+    const r2 = await authFetch(`/api/contracts/${contractId}`);
+    const d2 = await r2.json();
+    setResponses(prev => ({ ...prev, [contractId]: d2.responses || [] }));
+    // Also update contracts list to show closed status
+    loadContracts();
   };
+
+  const openChat = async (dealId, resp) => {
+    setMessages([]);
+    setChatDeal({ deal_id: dealId, cleaner_name: resp.name, company_name: resp.company_name });
+    const r = await authFetch(`/api/messages/${dealId}`);
+    const d = await r.json();
+    if (Array.isArray(d)) setMessages(d);
+  };
+
+  const sendMessage = async () => {
+    if (!msgInput.trim() || !chatDeal) return;
+    await authFetch(`/api/messages/${chatDeal.deal_id}`, { method:"POST", body: JSON.stringify({ body: msgInput }) });
+    setMsgInput("");
+    const r = await authFetch(`/api/messages/${chatDeal.deal_id}`);
+    const d = await r.json();
+    if (Array.isArray(d)) setMessages(d);
+  };
+
+  // Poll chat every 5s when open
+  useEffect(()=>{
+    if (!chatDeal) return;
+    const t = setInterval(async ()=>{
+      const r = await authFetch(`/api/messages/${chatDeal.deal_id}`);
+      const d = await r.json();
+      if (Array.isArray(d)) setMessages(d);
+    }, 5000);
+    return ()=>clearInterval(t);
+  },[chatDeal]);
 
   const submitContract = async (e) => {
     e.preventDefault();
@@ -172,8 +203,8 @@ export default function BuyerDashboard() {
                 <div key={c.id} style={{ background:"#fff", borderRadius:12, marginBottom:14, border:"1px solid #e5e7eb", overflow:"hidden" }}>
                   <div onClick={()=>loadResponses(c.id)} style={{ padding:"1.25rem", cursor:"pointer", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <div>
-                      <div style={{ color:NAVY, fontWeight:700, fontSize:15 }}>{c.title}</div>
-                      <div style={{ color:"#6b7280", fontSize:13, marginTop:4 }}>{c.location} · {c.category} · {c.response_count||0} response{c.response_count!==1?"s":""}</div>
+                      <div style={{ color:NAVY, fontWeight:700, fontSize:15 }}>{c.business_name}</div>
+                      <div style={{ color:"#6b7280", fontSize:13, marginTop:4 }}>{c.location} · {c.facility_type} · {c.response_count||0} response{c.response_count!==1?"s":""}</div>
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                       {c.budget && <span style={{ color:"#15803d", fontWeight:700, fontSize:14 }}>{c.budget}</span>}
@@ -188,7 +219,7 @@ export default function BuyerDashboard() {
                           <div key={resp.id} style={{ background:"#fff", borderRadius:8, padding:"1rem", marginBottom:10, border:"1px solid #e5e7eb" }}>
                             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
                               <div>
-                                <div style={{ color:NAVY, fontWeight:700, fontSize:14 }}>{resp.cleaner_name}</div>
+                                <div style={{ color:NAVY, fontWeight:700, fontSize:14 }}>{resp.name}</div>
                                 {resp.company_name && <div style={{ color:"#6b7280", fontSize:12 }}>{resp.company_name}</div>}
                                 <div style={{ color:"#374151", fontSize:13, marginTop:6 }}>{resp.message}</div>
                                 {resp.quote && <div style={{ color:"#15803d", fontWeight:700, fontSize:14, marginTop:6 }}>Quote: {resp.quote}</div>}
@@ -199,11 +230,18 @@ export default function BuyerDashboard() {
                                 fontSize:11, padding:"3px 10px", borderRadius:4, fontWeight:700, whiteSpace:"nowrap"
                               }}>{resp.status.toUpperCase()}</span>
                             </div>
-                            {resp.status==="pending" && (
-                              <button onClick={()=>acceptResponse(c.id,resp.id)} style={{ marginTop:10, background:CYAN, color:NAVY, border:"none", borderRadius:6, padding:"6px 16px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
-                                Accept This Cleaner
-                              </button>
-                            )}
+                            <div style={{ display:"flex", gap:8, marginTop:10, flexWrap:"wrap" }}>
+                              {resp.status==="pending" && (
+                                <button onClick={()=>acceptResponse(c.id,resp.id)} style={{ background:CYAN, color:NAVY, border:"none", borderRadius:6, padding:"6px 16px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+                                  Accept This Cleaner
+                                </button>
+                              )}
+                              {resp.status==="accepted" && resp.deal_id && (
+                                <button onClick={()=>openChat(resp.deal_id, resp)} style={{ background:NAVY, color:CYAN, border:`1px solid ${BORDER}`, borderRadius:6, padding:"6px 16px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+                                  💬 Message Cleaner
+                                </button>
+                              )}
+                            </div>
                           </div>
                         ))
                       }
@@ -215,6 +253,49 @@ export default function BuyerDashboard() {
           </div>
         )}
       </div>
+
+      {/* CHAT MODAL */}
+      {chatDeal && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", display:"flex", alignItems:"flex-end", justifyContent:"center", zIndex:1000 }}>
+          <div style={{ background:"#fff", width:"100%", maxWidth:520, borderRadius:"14px 14px 0 0", display:"flex", flexDirection:"column", maxHeight:"80vh" }}>
+            <div style={{ padding:"1rem 1.25rem", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div>
+                <div style={{ color:NAVY, fontWeight:800, fontSize:15 }}>💬 {chatDeal.company_name || chatDeal.cleaner_name}</div>
+                <div style={{ color:"#6b7280", fontSize:12, marginTop:2 }}>In-app message thread</div>
+              </div>
+              <button onClick={()=>setChatDeal(null)} style={{ background:"#f3f4f6", border:"none", borderRadius:6, padding:"5px 10px", cursor:"pointer", color:"#6b7280", fontSize:16 }}>✕</button>
+            </div>
+            <div style={{ flex:1, overflowY:"auto", padding:"1rem", display:"flex", flexDirection:"column", gap:10 }}>
+              {messages.length===0 && (
+                <div style={{ textAlign:"center", color:"#9ca3af", fontSize:13, marginTop:"2rem" }}>No messages yet. Start the conversation!</div>
+              )}
+              {messages.map(m=>{
+                const mine = m.sender_id === user?.id;
+                return (
+                  <div key={m.id} style={{ display:"flex", justifyContent:mine?"flex-end":"flex-start" }}>
+                    <div style={{ maxWidth:"72%", background:mine?NAVY:"#f3f4f6", color:mine?"#fff":"#111827", borderRadius:mine?"12px 12px 2px 12px":"12px 12px 12px 2px", padding:"0.65rem 0.9rem", fontSize:13 }}>
+                      <div>{m.body}</div>
+                      <div style={{ fontSize:10, color:mine?"rgba(255,255,255,0.5)":"#9ca3af", marginTop:4, textAlign:mine?"right":"left" }}>
+                        {new Date(m.created_at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ padding:"0.85rem", borderTop:"1px solid #e5e7eb", display:"flex", gap:8 }}>
+              <input
+                style={{ flex:1, padding:"0.65rem 0.85rem", border:"1px solid #e5e7eb", borderRadius:8, fontSize:13, fontFamily:"'DM Sans',sans-serif", outline:"none" }}
+                placeholder="Type a message…"
+                value={msgInput}
+                onChange={e=>setMsgInput(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&sendMessage()}
+              />
+              <button onClick={sendMessage} disabled={!msgInput.trim()} style={{ background:NAVY, color:CYAN, border:"none", borderRadius:8, padding:"0.65rem 1.1rem", fontSize:13, fontWeight:700, cursor:msgInput.trim()?"pointer":"default", opacity:msgInput.trim()?1:0.5, fontFamily:"'DM Sans',sans-serif" }}>Send</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

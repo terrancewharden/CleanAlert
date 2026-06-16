@@ -70,6 +70,31 @@ router.get("/recent", requireAuth, requireAdmin, async (_req, res) => {
   }
 });
 
+// GET /api/admin/notifications
+router.get("/notifications", requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT n.*,
+              b.name as buyer_name, b.email as buyer_email, b.phone as buyer_phone,
+              cl.name as cleaner_name, cl.email as cleaner_email, cl.phone as cleaner_phone,
+              cl.company_name as cleaner_company
+       FROM admin_notifications n
+       JOIN users b ON n.buyer_id=b.id
+       JOIN users cl ON n.cleaner_id=cl.id
+       ORDER BY n.created_at DESC LIMIT 50`
+    );
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/admin/notifications/:id — mark read
+router.patch("/notifications/:id", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    await pool.query("UPDATE admin_notifications SET is_read=true WHERE id=$1", [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // GET /api/admin/promo-codes
 router.get("/promo-codes", requireAuth, requireAdmin, async (_req, res) => {
   try {

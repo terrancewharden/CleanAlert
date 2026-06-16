@@ -37,15 +37,18 @@ router.post("/", requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/contracts/my — cleaner's active contracts (accepted responses)
+// GET /api/contracts/my — cleaner's accepted contracts with buyer contact + deal_id
 router.get("/my", requireAuth, async (req, res) => {
   const { rows } = await pool.query(
     `SELECT c.*, r.status as response_status, r.created_at as responded_at,
-            u.company_name as buyer_company,
-            EXTRACT(DAY FROM (c.end_date - NOW())) as days_remaining
+            u.company_name as buyer_company, u.name as buyer_name,
+            u.email as buyer_email, u.phone as buyer_phone,
+            EXTRACT(DAY FROM (c.end_date - NOW())) as days_remaining,
+            d.id as deal_id, d.share_publicly
      FROM contracts c
      JOIN responses r ON r.contract_id=c.id AND r.cleaner_id=$1
      JOIN users u ON c.buyer_id=u.id
+     LEFT JOIN deals d ON d.contract_id=c.id AND d.cleaner_id=$1
      WHERE r.status='accepted'
      ORDER BY c.end_date ASC NULLS LAST`,
     [req.user.id]
@@ -72,8 +75,11 @@ router.get("/:id", requireAuth, async (req, res) => {
   const contract = rows[0];
 
   const { rows: responses } = await pool.query(
-    `SELECT r.*, u.name, u.company_name, u.rating, u.review_count
-     FROM responses r JOIN users u ON r.cleaner_id=u.id
+    `SELECT r.*, u.name, u.company_name, u.rating, u.review_count,
+            d.id as deal_id
+     FROM responses r
+     JOIN users u ON r.cleaner_id=u.id
+     LEFT JOIN deals d ON d.contract_id=r.contract_id AND d.cleaner_id=r.cleaner_id
      WHERE r.contract_id=$1 ORDER BY r.created_at DESC`,
     [req.params.id]
   );
@@ -117,6 +123,15 @@ router.post("/:id/accept/:responseId", requireAuth, async (req, res) => {
       [req.params.id, resp.cleaner_id, req.user.id, budgetValue, resp.share_deal]
     );
     await client.query("UPDATE contracts SET status='closed' WHERE id=$1", [req.params.id]);
+
+    // Fire admin notification
+    await client.query(
+      `INSERT INTO admin_notifications (type, deal_id, buyer_id, cleaner_id, detail)
+       VALUES ('deal_made', $1, $2, $3, $4)`,
+      [deal.id, req.user.id, resp.cleaner_id,
+       `${contract.business_name} · ${contract.facility_type} · ${contract.budget || "TBD"}`]
+    );
+
     await client.query("COMMIT");
     res.json(deal);
   } catch (err) {

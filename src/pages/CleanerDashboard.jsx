@@ -127,6 +127,13 @@ export default function CleanerDashboard() {
   const [myContracts, setMyContracts] = useState([]);
   const [publicDeals, setPublicDeals] = useState([]);
   const [shared, setShared] = useState({});
+  const [chatDeal, setChatDeal] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [msgInput, setMsgInput] = useState("");
+  const [reviewModal, setReviewModal] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewSent, setReviewSent] = useState({});
 
   useEffect(()=>{
     loadFeed();
@@ -155,9 +162,37 @@ export default function CleanerDashboard() {
     } catch(e){}
   };
 
+  const openChat = async (deal)=>{
+    setMessages([]);
+    setChatDeal(deal);
+    loadMessages(deal.deal_id);
+  };
+
+  const loadMessages = async (dealId)=>{
+    try {
+      const r = await authFetch(`/api/messages/${dealId}`);
+      const d = await r.json();
+      if(Array.isArray(d)) setMessages(d);
+    } catch(e){}
+  };
+
+  const sendMessage = async ()=>{
+    if(!msgInput.trim()||!chatDeal) return;
+    await authFetch(`/api/messages/${chatDeal.deal_id}`, { method:"POST", body:JSON.stringify({ body: msgInput }) });
+    setMsgInput("");
+    loadMessages(chatDeal.deal_id);
+  };
+
+  // Poll chat every 5s when open
+  useEffect(()=>{
+    if(!chatDeal) return;
+    const t = setInterval(()=>loadMessages(chatDeal.deal_id), 5000);
+    return ()=>clearInterval(t);
+  },[chatDeal]);
+
   const loadFeed = async ()=>{
     try {
-      const r = await authFetch("/api/contracts/feed");
+      const r = await authFetch("/api/contracts");
       const d = await r.json();
       if(Array.isArray(d)) setLiveContracts(d);
     } catch(e){}
@@ -253,32 +288,59 @@ export default function CleanerDashboard() {
 
         {tab==="mine" && (
           <div>
-            <h2 style={{ color:"#fff", fontSize:18, fontWeight:800, marginBottom:"1rem" }}>My Bids</h2>
+            <h2 style={{ color:"#fff", fontSize:18, fontWeight:800, marginBottom:"1rem" }}>My Active Contracts</h2>
+
+            {/* Renewal alerts */}
+            {myContracts.filter(c=>c.days_remaining!==null && c.days_remaining<=30 && c.days_remaining>=0).map(c=>(
+              <div key={`renew-${c.id}`} style={{ background:"#1a0f00", border:"1px solid #78350f", borderRadius:10, padding:"0.85rem 1.25rem", marginBottom:10, display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" }}>
+                <span style={{ fontSize:18 }}>⚠️</span>
+                <div style={{ flex:1 }}>
+                  <div style={{ color:"#fcd34d", fontWeight:700, fontSize:13 }}>{c.business_name} — contract expires in {Math.ceil(c.days_remaining)} day{Math.ceil(c.days_remaining)!==1?"s":""}</div>
+                  <div style={{ color:"#92400e", fontSize:12, marginTop:2 }}>Reach out to your client about renewal before it closes.</div>
+                </div>
+                {c.deal_id && <button onClick={()=>openChat(c)} style={{ background:"#fbbf24", color:"#78350f", border:"none", borderRadius:6, padding:"5px 14px", fontSize:12, fontWeight:700, cursor:"pointer" }}>Message Client →</button>}
+              </div>
+            ))}
+
             {myContracts.length===0
-              ? <div style={{ background:"#0d1f3c", borderRadius:12, padding:"2.5rem", textAlign:"center", color:MUTED, border:`1px solid ${BORDER}` }}>No bids placed yet. <button onClick={()=>setTab("feed")} style={{ color:CYAN, background:"none", border:"none", cursor:"pointer", fontWeight:700 }}>Browse jobs →</button></div>
+              ? <div style={{ background:"#0d1f3c", borderRadius:12, padding:"2.5rem", textAlign:"center", color:MUTED, border:`1px solid ${BORDER}` }}>No contracts yet. <button onClick={()=>setTab("feed")} style={{ color:CYAN, background:"none", border:"none", cursor:"pointer", fontWeight:700 }}>Browse jobs →</button></div>
               : myContracts.map(c=>(
                 <div key={c.id} style={{ background:"#fff", borderRadius:12, marginBottom:12, border:"1px solid #e5e7eb", overflow:"hidden" }}>
-                  <div style={{ padding:"1.25rem", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
-                    <div style={{ flex:1 }}>
-                      <div style={{ color:NAVY, fontWeight:700, fontSize:15 }}>{c.business_name || c.title}</div>
-                      <div style={{ color:"#6b7280", fontSize:13, marginTop:4 }}>{c.location} · {c.facility_type || c.category}</div>
-                      {c.budget && <div style={{ color:"#15803d", fontWeight:800, fontSize:15, marginTop:6 }}>{c.budget}</div>}
+                  <div style={{ padding:"1.25rem" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, marginBottom:10 }}>
+                      <div style={{ flex:1 }}>
+                        <div style={{ color:NAVY, fontWeight:800, fontSize:15 }}>{c.business_name}</div>
+                        <div style={{ color:"#6b7280", fontSize:13, marginTop:3 }}>{c.location} · {c.facility_type}</div>
+                        {c.budget && <div style={{ color:"#15803d", fontWeight:900, fontSize:16, marginTop:5 }}>{c.budget}</div>}
+                      </div>
+                      <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:6 }}>
+                        <span style={{ background:"#dcfce7", color:"#166534", fontSize:11, padding:"3px 10px", borderRadius:4, fontWeight:700 }}>ACTIVE</span>
+                        {c.days_remaining!==null && (
+                          <span style={{ fontSize:11, color: c.days_remaining<=30?"#dc2626": c.days_remaining<=60?"#92400e":"#6b7280", fontWeight:600 }}>
+                            {Math.ceil(c.days_remaining)}d remaining
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span style={{
-                      background:c.response_status==="accepted"?"#dcfce7":c.response_status==="rejected"?"#fee2e2":"#fef9c3",
-                      color:c.response_status==="accepted"?"#166534":c.response_status==="rejected"?"#dc2626":"#92400e",
-                      fontSize:11, padding:"3px 10px", borderRadius:4, fontWeight:700, whiteSpace:"nowrap"
-                    }}>{(c.response_status||"pending").toUpperCase()}</span>
-                  </div>
-                  {c.response_status==="accepted" && (
-                    <div style={{ borderTop:"1px solid #f0fdf4", background:"#f0fdf4", padding:"0.85rem 1.25rem", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
-                      <span style={{ color:"#166534", fontSize:13, fontWeight:600 }}>🏆 Contract won! Show the community.</span>
+
+                    {/* Buyer contact — revealed on acceptance */}
+                    <div style={{ background:"#f0f9ff", borderRadius:8, padding:"0.75rem", border:"1px solid #bae6fd", marginBottom:10 }}>
+                      <div style={{ color:"#0369a1", fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>🔓 Client Contact</div>
+                      <div style={{ color:"#0c4a6e", fontSize:13, fontWeight:600 }}>{c.buyer_name} {c.buyer_company ? `· ${c.buyer_company}` : ""}</div>
+                      <div style={{ color:"#0369a1", fontSize:13 }}>{c.buyer_email}{c.buyer_phone ? ` · ${c.buyer_phone}` : ""}</div>
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                      {c.deal_id && (
+                        <button onClick={()=>openChat(c)} style={{ background:NAVY, color:CYAN, border:`1px solid ${BORDER}`, borderRadius:6, padding:"6px 14px", fontSize:13, fontWeight:700, cursor:"pointer" }}>💬 Message Client</button>
+                      )}
                       {shared[c.id]
-                        ? <span style={{ color:"#166534", fontSize:13, fontWeight:700 }}>✓ Posted to Deals</span>
-                        : <button onClick={()=>shareWin(c.id)} style={{ background:NAVY, color:"#ffd966", border:"1px solid #c89200", borderRadius:6, padding:"5px 16px", fontSize:13, fontWeight:700, cursor:"pointer" }}>🏆 Share Your Win</button>
+                        ? <span style={{ color:"#166534", fontSize:13, fontWeight:700, padding:"6px 0" }}>✓ Posted to Deals</span>
+                        : <button onClick={()=>shareWin(c.id)} style={{ background:"#0d1f3c", color:"#ffd966", border:"1px solid #c89200", borderRadius:6, padding:"6px 14px", fontSize:13, fontWeight:700, cursor:"pointer" }}>🏆 Share Win</button>
                       }
                     </div>
-                  )}
+                  </div>
                 </div>
               ))
             }
@@ -286,11 +348,59 @@ export default function CleanerDashboard() {
         )}
       </div>
 
+      {/* CHAT MODAL */}
+      {chatDeal && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", display:"flex", alignItems:"flex-end", justifyContent:"center", zIndex:1000 }}>
+          <div style={{ background:"#fff", width:"100%", maxWidth:520, borderRadius:"14px 14px 0 0", display:"flex", flexDirection:"column", maxHeight:"80vh" }}>
+            {/* Header */}
+            <div style={{ padding:"1rem 1.25rem", borderBottom:"1px solid #e5e7eb", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+              <div>
+                <div style={{ color:NAVY, fontWeight:800, fontSize:15 }}>💬 {chatDeal.business_name}</div>
+                <div style={{ color:"#6b7280", fontSize:12, marginTop:2 }}>In-app message with {chatDeal.buyer_name || "client"}</div>
+              </div>
+              <button onClick={()=>setChatDeal(null)} style={{ background:"#f3f4f6", border:"none", borderRadius:6, padding:"5px 10px", cursor:"pointer", color:"#6b7280", fontSize:16 }}>✕</button>
+            </div>
+
+            {/* Message thread */}
+            <div style={{ flex:1, overflowY:"auto", padding:"1rem", display:"flex", flexDirection:"column", gap:10 }}>
+              {messages.length===0 && (
+                <div style={{ textAlign:"center", color:"#9ca3af", fontSize:13, marginTop:"2rem" }}>No messages yet. Say hello! 👋</div>
+              )}
+              {messages.map(m=>{
+                const mine = m.sender_id === user?.id;
+                return (
+                  <div key={m.id} style={{ display:"flex", justifyContent:mine?"flex-end":"flex-start" }}>
+                    <div style={{ maxWidth:"72%", background:mine?NAVY:"#f3f4f6", color:mine?"#fff":"#111827", borderRadius:mine?"12px 12px 2px 12px":"12px 12px 12px 2px", padding:"0.65rem 0.9rem", fontSize:13 }}>
+                      <div>{m.body}</div>
+                      <div style={{ fontSize:10, color:mine?"rgba(255,255,255,0.5)":"#9ca3af", marginTop:4, textAlign:mine?"right":"left" }}>
+                        {new Date(m.created_at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Input */}
+            <div style={{ padding:"0.85rem", borderTop:"1px solid #e5e7eb", display:"flex", gap:8 }}>
+              <input
+                style={{ flex:1, padding:"0.65rem 0.85rem", border:"1px solid #e5e7eb", borderRadius:8, fontSize:13, fontFamily:"'DM Sans',sans-serif", outline:"none" }}
+                placeholder="Type a message…"
+                value={msgInput}
+                onChange={e=>setMsgInput(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&sendMessage()}
+              />
+              <button onClick={sendMessage} disabled={!msgInput.trim()} style={{ background:NAVY, color:CYAN, border:"none", borderRadius:8, padding:"0.65rem 1.1rem", fontSize:13, fontWeight:700, cursor:msgInput.trim()?"pointer":"default", opacity:msgInput.trim()?1:0.5, fontFamily:"'DM Sans',sans-serif" }}>Send</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {modal && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", display:"flex", alignItems:"flex-end", justifyContent:"center", zIndex:999, padding:"0" }}>
           <div className="ca-modal-card">
             <h3 style={{ color:NAVY, fontSize:17, fontWeight:800, marginBottom:4 }}>Express Interest</h3>
-            <p style={{ color:"#6b7280", fontSize:13, marginBottom:"1.25rem" }}>{modal.title} · {modal.location}</p>
+            <p style={{ color:"#6b7280", fontSize:13, marginBottom:"1.25rem" }}>{modal.business_name || modal.facility_type} · {modal.location}</p>
             <div style={{ marginBottom:12 }}>
               <label style={{ display:"block", color:"#374151", fontSize:13, fontWeight:600, marginBottom:5 }}>Your Message</label>
               <textarea style={{...inp,minHeight:90,resize:"vertical"}} placeholder="Introduce yourself and why you're a great fit…" value={responseMsg[modal.id]||""} onChange={e=>setResponseMsg(p=>({...p,[modal.id]:e.target.value}))} />

@@ -31,7 +31,8 @@ export default function Register() {
   const [form, setForm] = useState({ name:"", email:"", password:"", company_name:"", location:"", promo_code:"" });
   const [showPw, setShowPw] = useState(false);
   const [showPromo, setShowPromo] = useState(false);
-  const [promoValid, setPromoValid] = useState(null); // null | true | false
+  const [promoValid, setPromoValid] = useState(null);
+  const [tosAgreed, setTosAgreed] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const set = k => e => setForm(f=>({...f,[k]:e.target.value}));
@@ -43,8 +44,10 @@ export default function Register() {
   };
 
   const submit = async e => {
-    e.preventDefault(); setError(""); setLoading(true);
-    const body = { ...form, user_type: userType };
+    e.preventDefault(); setError("");
+    if (!tosAgreed) return setError("You must agree to the Terms of Service to continue.");
+    setLoading(true);
+    const body = { ...form, user_type: userType, tos_agreed: true };
     if (userType !== "cleaner") delete body.promo_code;
     const r = await fetch("/api/auth/register", {
       method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
@@ -118,7 +121,15 @@ export default function Register() {
             </div>
           )}
 
-          <button type="submit" disabled={loading} style={{ width:"100%", padding:"0.8rem", background:CYAN, color:NAVY, fontWeight:800, fontSize:16, border:"none", borderRadius:8, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>
+          {/* ToS */}
+          <div style={{ display:"flex", gap:10, alignItems:"flex-start", marginBottom:"1rem", padding:"0.85rem", background:"#f8fafc", borderRadius:8, border:"1px solid #e2e8f0" }}>
+            <input type="checkbox" id="tos" checked={tosAgreed} onChange={e=>setTosAgreed(e.target.checked)} style={{ marginTop:2, accentColor:CYAN, width:15, height:15, flexShrink:0, cursor:"pointer" }} />
+            <label htmlFor="tos" style={{ color:"#374151", fontSize:12, lineHeight:1.5, cursor:"pointer" }}>
+              I agree to CleanAlert's <strong>Terms of Service</strong>. I understand that if I complete a deal outside the platform with a buyer I met through CleanAlert within 12 months, a bypass fee of <strong>$250</strong> is owed to CleanAlert LLC.
+            </label>
+          </div>
+
+          <button type="submit" disabled={loading||!tosAgreed} style={{ width:"100%", padding:"0.8rem", background:tosAgreed?CYAN:"#e5e7eb", color:tosAgreed?NAVY:"#9ca3af", fontWeight:800, fontSize:16, border:"none", borderRadius:8, cursor:tosAgreed?"pointer":"not-allowed", fontFamily:"'DM Sans',sans-serif", transition:"all 0.2s" }}>
             {loading?"Creating account…":"Create Account"}
           </button>
         </form>

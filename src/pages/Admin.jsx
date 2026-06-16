@@ -15,26 +15,34 @@ export default function Admin() {
   const [promoTab, setPromoTab] = useState(false);
   const [newCode, setNewCode] = useState({ code:"", trial_days:90, max_uses:"", note:"" });
   const [promoMsg, setPromoMsg] = useState("");
+  const [notifications, setNotifications] = useState([]);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [sr,ur,ar,pr] = await Promise.all([
+        const [sr,ur,ar,pr,nr] = await Promise.all([
           authFetch("/api/admin/stats"),
           authFetch("/api/admin/users"),
           authFetch("/api/admin/recent"),
           authFetch("/api/admin/promo-codes"),
+          authFetch("/api/admin/notifications"),
         ]);
-        const [s,u,a,p] = await Promise.all([sr.json(),ur.json(),ar.json(),pr.json()]);
+        const [s,u,a,p,n] = await Promise.all([sr.json(),ur.json(),ar.json(),pr.json(),nr.json()]);
         if (s.error) setError(`Stats: ${s.error}`); else setStats(s);
         if (Array.isArray(u)) setUsers(u); else setError(`Users: ${u?.error || 'Failed to load'}`);
         if (Array.isArray(a)) setActivity(a); else setError(`Activity: ${a?.error || 'Failed to load'}`);
         if (Array.isArray(p)) setPromoCodes(p);
+        if (Array.isArray(n)) setNotifications(n);
       } catch(e) { setError(e.message); }
     };
     load();
   }, []);
+
+  const markRead = async (id) => {
+    await authFetch(`/api/admin/notifications/${id}`, { method:"PATCH" });
+    setNotifications(n => n.map(x => x.id===id ? {...x, is_read:true} : x));
+  };
 
   const createCode = async (e) => {
     e.preventDefault(); setPromoMsg("");
@@ -75,6 +83,33 @@ export default function Admin() {
 
       <div className="ca-page" style={{ padding:"1.5rem" }}>
         {error && <div style={{ background:"#fff1f2", border:"1px solid #fecdd3", borderRadius:8, padding:"0.75rem 1rem", color:"#be123c", fontSize:13, marginBottom:"1rem" }}>⚠️ {error}</div>}
+
+        {/* DEAL ALERTS */}
+        {notifications.filter(n=>!n.is_read).length > 0 && (
+          <div style={{ marginBottom:"1.5rem" }}>
+            <div style={{ color:"#fff", fontSize:14, fontWeight:700, marginBottom:8 }}>
+              🔔 Deal Alerts — {notifications.filter(n=>!n.is_read).length} new
+            </div>
+            {notifications.filter(n=>!n.is_read).map(n=>(
+              <div key={n.id} style={{ background:"#fff", borderRadius:10, border:"2px solid #fbbf24", padding:"1rem 1.25rem", marginBottom:8, display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap" }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+                    <span style={{ background:"#fef3c7", color:"#92400e", fontSize:11, fontWeight:800, padding:"2px 8px", borderRadius:4 }}>🤝 DEAL MADE</span>
+                    <span style={{ color:"#9ca3af", fontSize:12 }}>{new Date(n.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div style={{ color:"#111827", fontWeight:700, fontSize:14, marginBottom:4 }}>{n.detail}</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"4px 16px" }}>
+                    <div style={{ color:"#374151", fontSize:12 }}><strong>Buyer:</strong> {n.buyer_name} · {n.buyer_email}{n.buyer_phone ? ` · ${n.buyer_phone}` : ""}</div>
+                    <div style={{ color:"#374151", fontSize:12 }}><strong>Cleaner:</strong> {n.cleaner_name} ({n.cleaner_company}) · {n.cleaner_email}{n.cleaner_phone ? ` · ${n.cleaner_phone}` : ""}</div>
+                  </div>
+                </div>
+                <button onClick={()=>markRead(n.id)} style={{ background:"#0A1628", color:"#00D4FF", border:"1px solid #1e3a6e", borderRadius:6, padding:"6px 14px", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
+                  ✓ Followed Up
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {stats && (
           <div className="ca-stats" style={{ marginBottom:"1.5rem" }}>
