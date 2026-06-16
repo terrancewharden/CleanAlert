@@ -35,8 +35,41 @@ function DealBadge({ color, label }) {
   );
 }
 
+function TrialBanner({ user, nav }) {
+  if (!user || user.subscription_status !== "trial" || !user.trial_ends_at) return null;
+  const msLeft = new Date(user.trial_ends_at) - Date.now();
+  const daysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
+  const expired = daysLeft === 0;
+  const urgent = daysLeft <= 7;
+  const pct = Math.min(100, Math.max(0, (daysLeft / 90) * 100));
+
+  return (
+    <div style={{ background: expired?"#1a0a0a": urgent?"#1a0f00":"#0a1f10", borderBottom:`1px solid ${expired?"#7f1d1d":urgent?"#78350f":"#14532d"}`, padding:"0.75rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <span style={{ fontSize:18 }}>{expired?"🔒":urgent?"⚠️":"🎉"}</span>
+        <div>
+          <div style={{ color: expired?"#fca5a5":urgent?"#fcd34d":"#86efac", fontSize:13, fontWeight:700 }}>
+            {expired ? "Your free trial has ended" : `${daysLeft} day${daysLeft!==1?"s":""} left on your free trial`}
+          </div>
+          {!expired && (
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:4 }}>
+              <div style={{ width:120, height:4, background:"rgba(255,255,255,0.15)", borderRadius:2 }}>
+                <div style={{ width:`${pct}%`, height:"100%", background: urgent?"#fbbf24":CYAN, borderRadius:2, transition:"width 0.3s" }} />
+              </div>
+              <span style={{ color:"rgba(255,255,255,0.5)", fontSize:11 }}>of 90 days</span>
+            </div>
+          )}
+        </div>
+      </div>
+      <button onClick={()=>nav("/subscribe")} style={{ background:expired?"#ef4444":urgent?"#f59e0b":CYAN, color:expired||urgent?"#fff":NAVY, border:"none", borderRadius:6, padding:"6px 16px", fontSize:13, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", fontFamily:"'DM Sans',sans-serif" }}>
+        {expired?"Subscribe to Restore Access →":"Upgrade to Pro →"}
+      </button>
+    </div>
+  );
+}
+
 export default function CleanerDashboard() {
-  const { authFetch, logout } = useAuth();
+  const { user, authFetch, logout } = useAuth();
   const nav = useNavigate();
   const [tab, setTab] = useState("feed");
   const [liveContracts, setLiveContracts] = useState([]);
@@ -90,6 +123,7 @@ export default function CleanerDashboard() {
     <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"'DM Sans',sans-serif" }}>
       <style>{shimmer}{pulse}</style>
 
+      <TrialBanner user={user} nav={nav} />
       <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <Logo size={30} />
         <div style={{ display:"flex", alignItems:"center", gap:16 }}>

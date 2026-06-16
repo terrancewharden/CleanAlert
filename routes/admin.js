@@ -70,4 +70,41 @@ router.get("/recent", requireAuth, requireAdmin, async (_req, res) => {
   }
 });
 
+// GET /api/admin/promo-codes
+router.get("/promo-codes", requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    const { rows } = await pool.query("SELECT * FROM promo_codes ORDER BY created_at DESC");
+    res.json(rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/admin/promo-codes — create a new code
+router.post("/promo-codes", requireAuth, requireAdmin, async (req, res) => {
+  const { code, trial_days = 90, max_uses, note, expires_at } = req.body;
+  if (!code) return res.status(400).json({ error: "Code is required" });
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO promo_codes (code, trial_days, max_uses, note, expires_at)
+       VALUES (UPPER($1), $2, $3, $4, $5) RETURNING *`,
+      [code.trim(), trial_days, max_uses || null, note || null, expires_at || null]
+    );
+    res.json(rows[0]);
+  } catch (err) {
+    if (err.code === "23505") return res.status(409).json({ error: "Code already exists" });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/promo-codes/:id — toggle active / update
+router.patch("/promo-codes/:id", requireAuth, requireAdmin, async (req, res) => {
+  const { is_active } = req.body;
+  try {
+    const { rows } = await pool.query(
+      "UPDATE promo_codes SET is_active=$1 WHERE id=$2 RETURNING *",
+      [is_active, req.params.id]
+    );
+    res.json(rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 export default router;

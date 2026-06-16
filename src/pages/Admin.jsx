@@ -11,20 +11,45 @@ export default function Admin() {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [activity, setActivity] = useState([]);
+  const [promoCodes, setPromoCodes] = useState([]);
+  const [promoTab, setPromoTab] = useState(false);
+  const [newCode, setNewCode] = useState({ code:"", trial_days:90, max_uses:"", note:"" });
+  const [promoMsg, setPromoMsg] = useState("");
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [sr,ur,ar] = await Promise.all([authFetch("/api/admin/stats"),authFetch("/api/admin/users"),authFetch("/api/admin/recent")]);
-        const [s,u,a] = await Promise.all([sr.json(),ur.json(),ar.json()]);
+        const [sr,ur,ar,pr] = await Promise.all([
+          authFetch("/api/admin/stats"),
+          authFetch("/api/admin/users"),
+          authFetch("/api/admin/recent"),
+          authFetch("/api/admin/promo-codes"),
+        ]);
+        const [s,u,a,p] = await Promise.all([sr.json(),ur.json(),ar.json(),pr.json()]);
         if (s.error) setError(`Stats: ${s.error}`); else setStats(s);
         if (Array.isArray(u)) setUsers(u); else setError(`Users: ${u?.error || 'Failed to load'}`);
         if (Array.isArray(a)) setActivity(a); else setError(`Activity: ${a?.error || 'Failed to load'}`);
+        if (Array.isArray(p)) setPromoCodes(p);
       } catch(e) { setError(e.message); }
     };
     load();
   }, []);
+
+  const createCode = async (e) => {
+    e.preventDefault(); setPromoMsg("");
+    const r = await authFetch("/api/admin/promo-codes", { method:"POST", body:JSON.stringify({ ...newCode, max_uses: newCode.max_uses ? parseInt(newCode.max_uses) : null }) });
+    const d = await r.json();
+    if (d.error) { setPromoMsg(`Error: ${d.error}`); return; }
+    setPromoCodes(p=>[d,...p]);
+    setNewCode({ code:"", trial_days:90, max_uses:"", note:"" });
+    setPromoMsg("✓ Code created!");
+  };
+
+  const toggleCode = async (id, active) => {
+    await authFetch(`/api/admin/promo-codes/${id}`, { method:"PATCH", body:JSON.stringify({ is_active:!active }) });
+    setPromoCodes(p=>p.map(c=>c.id===id?{...c,is_active:!active}:c));
+  };
 
   const toggleBan = async (id, banned) => {
     await authFetch(`/api/admin/users/${id}/ban`, { method:"POST", body:JSON.stringify({is_banned:!banned}) });
@@ -82,6 +107,48 @@ export default function Admin() {
           </div>
         )}
 
+        {/* PROMO CODES */}
+        <div style={{ background:"#fff", borderRadius:10, border:"1px solid #e5e7eb", marginBottom:"1.5rem", overflow:"hidden" }}>
+          <div onClick={()=>setPromoTab(v=>!v)} style={{ padding:"1rem 1.25rem", borderBottom: promoTab?"1px solid #e5e7eb":"none", display:"flex", justifyContent:"space-between", alignItems:"center", cursor:"pointer" }}>
+            <span style={{ color:NAVY, fontSize:15, fontWeight:700 }}>🎟️ Invite / Promo Codes</span>
+            <span style={{ color:MUTED, fontSize:13 }}>{promoTab?"▲":"▼"} {promoCodes.length} codes</span>
+          </div>
+          {promoTab && (
+            <div style={{ padding:"1.25rem" }}>
+              {/* CREATE FORM */}
+              <form onSubmit={createCode} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 2fr auto", gap:10, marginBottom:"1rem", alignItems:"end" }}>
+                {[["Code","code","e.g. SUMMER90","text"],["Trial Days","trial_days","90","number"],["Max Uses","max_uses","unlimited","number"],["Note (internal)","note","e.g. Reddit launch","text"]].map(([l,k,ph,t])=>(
+                  <div key={k}>
+                    <label style={{ display:"block", color:"#6b7280", fontSize:11, fontWeight:600, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" }}>{l}</label>
+                    <input type={t} placeholder={ph} value={newCode[k]} onChange={e=>setNewCode(n=>({...n,[k]:e.target.value}))} style={{ width:"100%", padding:"0.6rem 0.75rem", border:"1px solid #e5e7eb", borderRadius:6, fontSize:13, color:"#111827", fontFamily:"'DM Sans',sans-serif", textTransform:k==="code"?"uppercase":"none" }} required={k==="code"} />
+                  </div>
+                ))}
+                <button type="submit" style={{ background:CYAN, color:NAVY, border:"none", borderRadius:6, padding:"0.6rem 1rem", fontSize:13, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>+ Create</button>
+              </form>
+              {promoMsg && <div style={{ color:promoMsg.startsWith("✓")?"#15803d":"#dc2626", fontSize:13, fontWeight:600, marginBottom:"1rem" }}>{promoMsg}</div>}
+
+              {/* CODES TABLE */}
+              <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                <thead><tr>{["Code","Trial","Uses","Max","Note","Status",""].map(h=><th key={h} style={{ color:"#6b7280", fontSize:11, fontWeight:600, textAlign:"left", padding:"0.5rem 0.6rem", borderBottom:"1px solid #f3f4f6", textTransform:"uppercase", letterSpacing:"0.05em" }}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {promoCodes.map(c=>(
+                    <tr key={c.id}>
+                      <td style={{ padding:"0.6rem", fontWeight:800, fontSize:14, color:NAVY, fontFamily:"monospace" }}>{c.code}</td>
+                      <td style={{ padding:"0.6rem", color:"#374151", fontSize:13 }}>{c.trial_days}d</td>
+                      <td style={{ padding:"0.6rem", color:"#374151", fontSize:13 }}>{c.uses_count}</td>
+                      <td style={{ padding:"0.6rem", color:"#374151", fontSize:13 }}>{c.max_uses||"∞"}</td>
+                      <td style={{ padding:"0.6rem", color:"#6b7280", fontSize:12 }}>{c.note||"—"}</td>
+                      <td style={{ padding:"0.6rem" }}><span style={{ background:c.is_active?"#dcfce7":"#fee2e2", color:c.is_active?"#166534":"#dc2626", fontSize:11, padding:"2px 8px", borderRadius:4, fontWeight:700 }}>{c.is_active?"ACTIVE":"OFF"}</span></td>
+                      <td style={{ padding:"0.6rem" }}><button onClick={()=>toggleCode(c.id,c.is_active)} style={{ background:"#f3f4f6", color:"#374151", border:"none", borderRadius:4, padding:"3px 10px", fontSize:12, cursor:"pointer" }}>{c.is_active?"Disable":"Enable"}</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* USERS TABLE */}
         <div style={{ background:"#fff", borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden" }}>
           <div style={{ padding:"1rem 1.25rem", borderBottom:"1px solid #e5e7eb" }}>
             <span style={{ color:NAVY, fontSize:15, fontWeight:700 }}>Users</span>
