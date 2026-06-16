@@ -12,26 +12,73 @@ const SEED_CARDS = [
   { id:"seed-3", business_name:"Atlas Fitness Center", facility_type:"Gym/Fitness", location:"King of Prussia, PA 19406", budget:"$2,800/mo", sqft:"8,500 sqft", frequency:"Daily", contract_length:"6 months", notes:"Full gym facility. Evening cleaning crew needed. Locker rooms, weight floor, cardio area.", isSeed:true },
 ];
 
-const SEED_DEALS = [
-  { id:"d1", title:"Mrs. Meyer's Cleaning Bundle", brand:"Grove Co.", value:"$48 value", description:"All-purpose, dish soap, hand soap + bonus scrubber set. Pro-grade.", badge:"HOT DEAL", color:"#ff6b35" },
-  { id:"d2", title:"Microfiber Pro Pack (24ct)", brand:"AmazonBasics Pro", value:"$34 value", description:"Industrial-grade microfiber cloths. Lint-free, machine washable 500x.", badge:"BEST SELLER", color:"#7c3aed" },
-  { id:"d3", title:"Shark Navigator Pro Upright", brand:"Shark", value:"$329 value", description:"Bagless, HEPA filter, anti-allergen seal. Preferred by 80% of pro cleaners.", badge:"STAFF PICK", color:"#0369a1" },
-  { id:"d4", title:"Concentrated Cleaner 5-Pack", brand:"Zep Commercial", value:"$67 value", description:"Multi-surface, bathroom, floor, glass, degreaser. Each jug makes 32 ready-to-use quarts.", badge:"BULK DEAL", color:"#166534" },
-  { id:"d5", title:"Mop & Bucket Pro System", brand:"Rubbermaid", value:"$89 value", description:"Commercial-grade wringer bucket, 2 cotton mop heads. Built for daily use.", badge:"NEW", color:"#b45309" },
+const SEED_WINS = [
+  { id:"w1", cleaner:"Marcus T.", company:"MT Clean Co.", facility_type:"Office", business_name:"Trident Property Group", location:"Center City, PA", budget:"$1,200/mo", contract_length:"1 year", ago:"3 days ago", badge:"🏆 1-Year Contract" },
+  { id:"w2", cleaner:"Sarah K.", company:"Sparkle Services", facility_type:"Airbnb/VRBO", business_name:"Private Host (Fishtown)", location:"Fishtown, PA", budget:"$95/turnover", contract_length:"Ongoing", ago:"1 week ago", badge:"⚡ Recurring Deal" },
+  { id:"w3", cleaner:"DeShawn M.", company:"Diamond Clean", facility_type:"Gym/Fitness", business_name:"Atlas Fitness Center", location:"King of Prussia, PA", budget:"$2,800/mo", contract_length:"6 months", ago:"2 weeks ago", badge:"💰 Big Contract" },
+  { id:"w4", cleaner:"Tanya R.", company:"TR Cleaning LLC", facility_type:"Restaurant", business_name:"Broad St. Kitchen", location:"South Philly, PA", budget:"$650/mo", contract_length:"3 months", ago:"3 weeks ago", badge:"🤝 New Client" },
+  { id:"w5", cleaner:"James O.", company:"Pro Surface LLC", facility_type:"Medical", business_name:"PhilaMed Urgent Care", location:"Bala Cynwyd, PA", budget:"$3,400/mo", contract_length:"1 year", ago:"1 month ago", badge:"🏆 1-Year Contract" },
 ];
 
 const shimmer = `@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}`;
 const pulse = `@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,212,255,0.4)}50%{box-shadow:0 0 0 8px rgba(0,212,255,0)}}`;
+const glow = `@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(255,196,0,0.3)}50%{box-shadow:0 0 18px 4px rgba(255,196,0,0.15)}}`;
 
-function DealBadge({ color, label }) {
+function WinCard({ win }) {
+  const isLive = !win.isSeed;
   return (
-    <span style={{
-      background:`linear-gradient(90deg,${color},${color}99,${color})`,
-      backgroundSize:"200% auto",
-      animation:"shimmer 2s linear infinite",
-      color:"#fff", fontSize:10, fontWeight:800, padding:"3px 10px",
-      borderRadius:4, letterSpacing:"0.08em"
-    }}>{label}</span>
+    <div style={{
+      background:"linear-gradient(145deg,#0d1f3c 0%,#0a1628 100%)",
+      borderRadius:14, border:"1px solid #c8920033",
+      padding:"1.25rem", position:"relative", overflow:"hidden",
+      animation: isLive ? "glow 3s ease-in-out infinite" : "none"
+    }}>
+      {/* Gold accent bar */}
+      <div style={{ position:"absolute", top:0, left:0, right:0, height:3, background:"linear-gradient(90deg,#c89200,#ffd966,#c89200)" }} />
+
+      {/* Badge */}
+      <div style={{ marginBottom:10 }}>
+        <span style={{ background:"rgba(200,146,0,0.15)", color:"#ffd966", fontSize:11, fontWeight:800, padding:"3px 10px", borderRadius:4, letterSpacing:"0.06em", border:"1px solid rgba(200,146,0,0.3)" }}>
+          {win.badge}
+        </span>
+        {isLive && <span style={{ marginLeft:8, background:"rgba(0,212,255,0.1)", color:CYAN, fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:4, border:`1px solid rgba(0,212,255,0.2)` }}>LIVE</span>}
+      </div>
+
+      {/* Cleaner */}
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:12 }}>
+        <div style={{ width:36, height:36, borderRadius:"50%", background:"linear-gradient(135deg,#1e3a6e,#0d2550)", border:"2px solid #c89200", display:"flex", alignItems:"center", justifyContent:"center", color:"#ffd966", fontWeight:800, fontSize:14, flexShrink:0 }}>
+          {(win.cleaner_company || win.company || "?")[0].toUpperCase()}
+        </div>
+        <div>
+          <div style={{ color:"#fff", fontWeight:700, fontSize:14 }}>{win.cleaner || "Anonymous"}</div>
+          <div style={{ color:MUTED, fontSize:12 }}>{win.cleaner_company || win.company}</div>
+        </div>
+      </div>
+
+      {/* Contract details */}
+      <div style={{ background:"rgba(255,255,255,0.04)", borderRadius:8, padding:"0.75rem", marginBottom:12 }}>
+        <div style={{ color:"#fff", fontWeight:700, fontSize:14, marginBottom:4 }}>
+          {win.business_name}
+        </div>
+        <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:6 }}>
+          <span style={{ background:"rgba(0,212,255,0.1)", color:CYAN, fontSize:11, padding:"2px 8px", borderRadius:4, fontWeight:600 }}>{win.facility_type}</span>
+          <span style={{ color:MUTED, fontSize:12 }}>📍 {win.location}</span>
+        </div>
+        <div style={{ color:MUTED, fontSize:12 }}>{win.contract_length} contract</div>
+      </div>
+
+      {/* Budget — the hero number */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+        <div>
+          <div style={{ color:"#6b8cba", fontSize:11, fontWeight:600, textTransform:"uppercase", letterSpacing:"0.06em" }}>Deal Value</div>
+          <div style={{ color:"#4ade80", fontWeight:900, fontSize:22, letterSpacing:"-0.02em" }}>{win.monthly_value || win.budget}</div>
+        </div>
+        <div style={{ textAlign:"right" }}>
+          <div style={{ color:"#ffd966", fontSize:11, fontWeight:700 }}>✓ Closed on CleanAlert</div>
+          <div style={{ color:MUTED, fontSize:11, marginTop:2 }}>{win.ago || "Recently"}</div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -78,6 +125,8 @@ export default function CleanerDashboard() {
   const [responseQuote, setResponseQuote] = useState({});
   const [submitted, setSubmitted] = useState({});
   const [myContracts, setMyContracts] = useState([]);
+  const [publicDeals, setPublicDeals] = useState([]);
+  const [shared, setShared] = useState({});
 
   useEffect(()=>{
     loadFeed();
@@ -87,7 +136,24 @@ export default function CleanerDashboard() {
 
   useEffect(()=>{
     if(tab==="mine") loadMine();
+    if(tab==="deals") loadDeals();
   },[tab]);
+
+  const loadDeals = async ()=>{
+    try {
+      const r = await authFetch("/api/contracts/deals/public");
+      const d = await r.json();
+      if(Array.isArray(d)) setPublicDeals(d);
+    } catch(e){}
+  };
+
+  const shareWin = async (contractId)=>{
+    try {
+      await authFetch(`/api/contracts/deals/share`, { method:"POST", body:JSON.stringify({ contract_id: contractId }) });
+      setShared(p=>({...p,[contractId]:true}));
+      loadDeals();
+    } catch(e){}
+  };
 
   const loadFeed = async ()=>{
     try {
@@ -121,7 +187,7 @@ export default function CleanerDashboard() {
 
   return (
     <div style={{ minHeight:"100vh", background:NAVY, fontFamily:"'DM Sans',sans-serif" }}>
-      <style>{shimmer}{pulse}</style>
+      <style>{shimmer}{pulse}{glow}</style>
 
       <TrialBanner user={user} nav={nav} />
       <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -169,21 +235,20 @@ export default function CleanerDashboard() {
 
         {tab==="deals" && (
           <div>
-            <h2 style={{ color:"#fff", fontSize:18, fontWeight:800, marginBottom:"1rem" }}>Cleaner Deals & Supplies</h2>
+            <div style={{ marginBottom:"1.5rem" }}>
+              <h2 style={{ color:"#fff", fontSize:18, fontWeight:800 }}>Deals Closed on CleanAlert</h2>
+              <p style={{ color:MUTED, fontSize:13, marginTop:4 }}>Real contracts. Real cleaners. Real money. 👀</p>
+            </div>
             <div className="ca-deal-grid">
-              {SEED_DEALS.map(d=>(
-                <div key={d.id} style={{ background:"#fff", borderRadius:12, padding:"1.25rem", border:"1px solid #e5e7eb" }}>
-                  <div style={{ marginBottom:10 }}><DealBadge color={d.color} label={d.badge} /></div>
-                  <div style={{ color:NAVY, fontWeight:800, fontSize:15, marginBottom:4 }}>{d.title}</div>
-                  <div style={{ color:"#6b7280", fontSize:12, marginBottom:8 }}>{d.brand}</div>
-                  <p style={{ color:"#374151", fontSize:13, lineHeight:1.5, marginBottom:12 }}>{d.description}</p>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                    <span style={{ color:"#15803d", fontWeight:800, fontSize:14 }}>{d.value}</span>
-                    <button style={{ background:NAVY, color:CYAN, border:`1px solid ${CYAN}`, borderRadius:6, padding:"5px 14px", fontSize:12, fontWeight:700, cursor:"pointer" }}>View Deal</button>
-                  </div>
-                </div>
+              {[...publicDeals.map(d=>({...d, isSeed:false})), ...SEED_WINS].map(w=>(
+                <WinCard key={w.id} win={w} />
               ))}
             </div>
+            {publicDeals.length === 0 && (
+              <div style={{ textAlign:"center", marginTop:"2rem", color:MUTED, fontSize:13 }}>
+                Be the first to post a win. Land a contract and share it from <button onClick={()=>setTab("mine")} style={{ color:CYAN, background:"none", border:"none", cursor:"pointer", fontWeight:700 }}>My Bids →</button>
+              </div>
+            )}
           </div>
         )}
 
@@ -193,18 +258,28 @@ export default function CleanerDashboard() {
             {myContracts.length===0
               ? <div style={{ background:"#0d1f3c", borderRadius:12, padding:"2.5rem", textAlign:"center", color:MUTED, border:`1px solid ${BORDER}` }}>No bids placed yet. <button onClick={()=>setTab("feed")} style={{ color:CYAN, background:"none", border:"none", cursor:"pointer", fontWeight:700 }}>Browse jobs →</button></div>
               : myContracts.map(c=>(
-                <div key={c.id} style={{ background:"#fff", borderRadius:12, marginBottom:12, padding:"1.25rem", border:"1px solid #e5e7eb" }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-                    <div>
-                      <div style={{ color:NAVY, fontWeight:700, fontSize:15 }}>{c.title}</div>
-                      <div style={{ color:"#6b7280", fontSize:13, marginTop:4 }}>{c.location} · {c.category}</div>
+                <div key={c.id} style={{ background:"#fff", borderRadius:12, marginBottom:12, border:"1px solid #e5e7eb", overflow:"hidden" }}>
+                  <div style={{ padding:"1.25rem", display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 }}>
+                    <div style={{ flex:1 }}>
+                      <div style={{ color:NAVY, fontWeight:700, fontSize:15 }}>{c.business_name || c.title}</div>
+                      <div style={{ color:"#6b7280", fontSize:13, marginTop:4 }}>{c.location} · {c.facility_type || c.category}</div>
+                      {c.budget && <div style={{ color:"#15803d", fontWeight:800, fontSize:15, marginTop:6 }}>{c.budget}</div>}
                     </div>
                     <span style={{
                       background:c.response_status==="accepted"?"#dcfce7":c.response_status==="rejected"?"#fee2e2":"#fef9c3",
                       color:c.response_status==="accepted"?"#166534":c.response_status==="rejected"?"#dc2626":"#92400e",
-                      fontSize:11, padding:"3px 10px", borderRadius:4, fontWeight:700
+                      fontSize:11, padding:"3px 10px", borderRadius:4, fontWeight:700, whiteSpace:"nowrap"
                     }}>{(c.response_status||"pending").toUpperCase()}</span>
                   </div>
+                  {c.response_status==="accepted" && (
+                    <div style={{ borderTop:"1px solid #f0fdf4", background:"#f0fdf4", padding:"0.85rem 1.25rem", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+                      <span style={{ color:"#166534", fontSize:13, fontWeight:600 }}>🏆 Contract won! Show the community.</span>
+                      {shared[c.id]
+                        ? <span style={{ color:"#166534", fontSize:13, fontWeight:700 }}>✓ Posted to Deals</span>
+                        : <button onClick={()=>shareWin(c.id)} style={{ background:NAVY, color:"#ffd966", border:"1px solid #c89200", borderRadius:6, padding:"5px 16px", fontSize:13, fontWeight:700, cursor:"pointer" }}>🏆 Share Your Win</button>
+                      }
+                    </div>
+                  )}
                 </div>
               ))
             }

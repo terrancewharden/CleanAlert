@@ -127,6 +127,22 @@ router.post("/:id/accept/:responseId", requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/contracts/deals/share — cleaner opts their deal into the public wall
+router.post("/deals/share", requireAuth, async (req, res) => {
+  const { contract_id } = req.body;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE deals SET share_publicly=true
+       WHERE contract_id=$1 AND cleaner_id=$2 RETURNING *`,
+      [contract_id, req.user.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: "Deal not found" });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/contracts/deals/public — public closed deals feed
 router.get("/deals/public", async (req, res) => {
   const { rows } = await pool.query(
