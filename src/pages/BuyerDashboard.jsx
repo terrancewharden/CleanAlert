@@ -74,9 +74,9 @@ export default function BuyerDashboard() {
       {/* NAV */}
       <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <Logo size={30} />
-        <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+        <div className="ca-nav-right">
           {/* SQUARE TOGGLE */}
-          <div style={{ display:"flex", background:"#0d1f3c", border:`1px solid ${BORDER}` }}>
+          <div className="ca-toggle" style={{ background:"#0d1f3c", border:`1px solid ${BORDER}` }}>
             {[["post","Post Job"],["contracts","My Contracts"]].map(([t,l])=>(
               <button key={t} onClick={()=>setTab(t)} style={{
                 background:tab===t?CYAN:"transparent",
@@ -95,18 +95,18 @@ export default function BuyerDashboard() {
         </div>
       </nav>
 
-      <div style={{ padding:"1.5rem", maxWidth:760, margin:"0 auto" }}>
+      <div className="ca-page" style={{ padding:"1.5rem", maxWidth:760, margin:"0 auto" }}>
 
         {/* POST JOB */}
         {tab==="post" && (
-          <div style={{ background:"#0d1f3c", borderRadius:12, padding:"2rem", border:`1px solid ${BORDER}` }}>
+          <div className="ca-form-card" style={{ background:"#0d1f3c", borderRadius:12, padding:"2rem", border:`1px solid ${BORDER}` }}>
             <h2 style={{ color:"#fff", fontSize:20, fontWeight:800, marginBottom:"1.5rem" }}>Post a Cleaning Job</h2>
             <form onSubmit={submitContract} style={{ display:"grid", gap:16 }}>
               <div>
                 <label style={lbl}>Business / Property Name</label>
                 <input style={inp} placeholder="e.g. Center City Office Suite" value={form.business_name} onChange={e=>setForm({...form,business_name:e.target.value})} required />
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div className="ca-grid-2">
                 <div>
                   <label style={lbl}>Facility Type</label>
                   <select style={inp} value={form.facility_type} onChange={e=>setForm({...form,facility_type:e.target.value})}>
@@ -120,7 +120,7 @@ export default function BuyerDashboard() {
                   </select>
                 </div>
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div className="ca-grid-2">
                 <div>
                   <label style={lbl}>Contract Length</label>
                   <select style={inp} value={form.contract_length} onChange={e=>setForm({...form,contract_length:e.target.value})}>
@@ -136,7 +136,7 @@ export default function BuyerDashboard() {
                 <label style={lbl}>Notes / Special Requirements</label>
                 <textarea style={{...inp,minHeight:90,resize:"vertical"}} placeholder="Describe what needs to be cleaned, any special requirements…" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} />
               </div>
-              <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:12 }}>
+              <div className="ca-grid-3">
                 <div>
                   <label style={lbl}>City / Address</label>
                   <input style={inp} placeholder="Philadelphia, PA" value={form.location} onChange={e=>setForm({...form,location:e.target.value})} required />

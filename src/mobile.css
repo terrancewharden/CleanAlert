@@ -1,0 +1,146 @@
+/* CleanAlert — Responsive Layout Overrides */
+
+html, body { overflow-x: hidden; }
+
+/* Nav right cluster */
+.ca-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Square toggle group */
+.ca-toggle {
+  display: flex;
+}
+
+/* 2-col form grid */
+.ca-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* 3-col form grid (2fr 1fr 1fr) */
+.ca-grid-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+}
+
+/* Admin promo create form */
+.ca-promo-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 2fr auto;
+  gap: 10px;
+  margin-bottom: 1rem;
+  align-items: end;
+}
+
+/* Contract card grid */
+.ca-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+/* Deals card grid */
+.ca-deal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* Admin stats tiles */
+.ca-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+/* Trial banner */
+.ca-trial-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.5rem;
+}
+
+/* Express interest modal inner card */
+.ca-modal-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 2rem;
+  max-width: 460px;
+  width: 100%;
+  border: 1px solid #e5e7eb;
+}
+
+/* ----------------------------------------
+   MOBILE OVERRIDES  (≤ 640px)
+---------------------------------------- */
+@media (max-width: 640px) {
+
+  /* Nav */
+  .ca-nav-right {
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  /* Shrink toggle tab text */
+  .ca-toggle button {
+    padding: 5px 10px !important;
+    font-size: 11px !important;
+  }
+
+  /* Collapse all form grids to single column */
+  .ca-grid-2 { grid-template-columns: 1fr; }
+  .ca-grid-3 { grid-template-columns: 1fr; }
+
+  /* Admin promo form → 2 cols, submit spans full */
+  .ca-promo-form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ca-promo-form > button[type="submit"] {
+    grid-column: 1 / -1;
+  }
+
+  /* Card grids → single column */
+  .ca-card-grid { grid-template-columns: 1fr; }
+  .ca-deal-grid  { grid-template-columns: 1fr; }
+
+  /* Stats → 2 cols */
+  .ca-stats { grid-template-columns: repeat(2, 1fr); }
+
+  /* Trial banner → stack vertically */
+  .ca-trial-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.75rem 1rem;
+  }
+  .ca-trial-banner > button {
+    width: 100% !important;
+  }
+
+  /* Page content padding */
+  .ca-page { padding: 1rem !important; }
+
+  /* Form card padding */
+  .ca-form-card { padding: 1.25rem !important; }
+
+  /* Modal → bottom sheet on mobile */
+  .ca-modal-card {
+    position: fixed !important;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 1.5rem !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}

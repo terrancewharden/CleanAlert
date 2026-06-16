@@ -66,18 +66,18 @@ export default function Admin() {
           <Logo size={30} />
           <span style={{ background:"#4c1d95", color:"#fff", fontSize:11, padding:"3px 10px", borderRadius:4, fontWeight:700, letterSpacing:"0.06em" }}>ADMIN</span>
         </div>
-        <div style={{ display:"flex", gap:8 }}>
+        <div className="ca-nav-right" style={{ gap:8 }}>
           <button onClick={()=>nav("/cleaner")} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"5px 12px", fontSize:13, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Cleaner View</button>
           <button onClick={()=>nav("/buyer")} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"5px 12px", fontSize:13, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Buyer View</button>
           <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"5px 12px", fontSize:13, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Sign out</button>
         </div>
       </nav>
 
-      <div style={{ padding:"1.5rem" }}>
+      <div className="ca-page" style={{ padding:"1.5rem" }}>
         {error && <div style={{ background:"#fff1f2", border:"1px solid #fecdd3", borderRadius:8, padding:"0.75rem 1rem", color:"#be123c", fontSize:13, marginBottom:"1rem" }}>⚠️ {error}</div>}
 
         {stats && (
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:16, marginBottom:"1.5rem" }}>
+          <div className="ca-stats" style={{ marginBottom:"1.5rem" }}>
             {[["Active Subscribers",stats.activeSubscribers??0,"🧹"],["MRR",`$${stats.mrr??0}`,"💰"],["Contracts",stats.totalContracts??0,"📋"],["Deals",stats.totalDeals??0,"🤝"]].map(([label,val,icon])=>(
               <div key={label} style={{ background:"#fff", borderRadius:10, padding:"1.25rem", border:"1px solid #e5e7eb" }}>
                 <div style={{ fontSize:22, marginBottom:6 }}>{icon}</div>
@@ -116,7 +116,7 @@ export default function Admin() {
           {promoTab && (
             <div style={{ padding:"1.25rem" }}>
               {/* CREATE FORM */}
-              <form onSubmit={createCode} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 2fr auto", gap:10, marginBottom:"1rem", alignItems:"end" }}>
+              <form onSubmit={createCode} className="ca-promo-form">
                 {[["Code","code","e.g. SUMMER90","text"],["Trial Days","trial_days","90","number"],["Max Uses","max_uses","unlimited","number"],["Note (internal)","note","e.g. Reddit launch","text"]].map(([l,k,ph,t])=>(
                   <div key={k}>
                     <label style={{ display:"block", color:"#6b7280", fontSize:11, fontWeight:600, marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" }}>{l}</label>

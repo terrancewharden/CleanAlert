@@ -44,7 +44,7 @@ function TrialBanner({ user, nav }) {
   const pct = Math.min(100, Math.max(0, (daysLeft / 90) * 100));
 
   return (
-    <div style={{ background: expired?"#1a0a0a": urgent?"#1a0f00":"#0a1f10", borderBottom:`1px solid ${expired?"#7f1d1d":urgent?"#78350f":"#14532d"}`, padding:"0.75rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+    <div className="ca-trial-banner" style={{ background: expired?"#1a0a0a": urgent?"#1a0f00":"#0a1f10", borderBottom:`1px solid ${expired?"#7f1d1d":urgent?"#78350f":"#14532d"}` }}>
       <div style={{ display:"flex", alignItems:"center", gap:10 }}>
         <span style={{ fontSize:18 }}>{expired?"🔒":urgent?"⚠️":"🎉"}</span>
         <div>
@@ -126,8 +126,8 @@ export default function CleanerDashboard() {
       <TrialBanner user={user} nav={nav} />
       <nav style={{ borderBottom:`1px solid ${BORDER}`, padding:"1rem 1.5rem", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <Logo size={30} />
-        <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-          <div style={{ display:"flex", background:"#0d1f3c", border:`1px solid ${BORDER}` }}>
+        <div className="ca-nav-right">
+          <div className="ca-toggle" style={{ background:"#0d1f3c", border:`1px solid ${BORDER}` }}>
             {[["feed","Job Feed"],["deals","Deals"],["mine","My Bids"]].map(([t,l])=>(
               <button key={t} onClick={()=>setTab(t)} style={{
                 background:tab===t?CYAN:"transparent",
@@ -145,7 +145,7 @@ export default function CleanerDashboard() {
         </div>
       </nav>
 
-      <div style={{ padding:"1.5rem" }}>
+      <div className="ca-page" style={{ padding:"1.5rem" }}>
 
         {tab==="feed" && (
           <div>
@@ -153,7 +153,7 @@ export default function CleanerDashboard() {
               <h2 style={{ color:"#fff", fontSize:18, fontWeight:800 }}>Available Jobs</h2>
               <span style={{ color:MUTED, fontSize:12 }}>Live · updates every 15s</span>
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))", gap:16 }}>
+            <div className="ca-card-grid">
               {allContracts.map(c=>(
                 <div key={c.id}>
                   <ContractCard contract={c} />
@@ -170,7 +170,7 @@ export default function CleanerDashboard() {
         {tab==="deals" && (
           <div>
             <h2 style={{ color:"#fff", fontSize:18, fontWeight:800, marginBottom:"1rem" }}>Cleaner Deals & Supplies</h2>
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:16 }}>
+            <div className="ca-deal-grid">
               {SEED_DEALS.map(d=>(
                 <div key={d.id} style={{ background:"#fff", borderRadius:12, padding:"1.25rem", border:"1px solid #e5e7eb" }}>
                   <div style={{ marginBottom:10 }}><DealBadge color={d.color} label={d.badge} /></div>
@@ -213,8 +213,8 @@ export default function CleanerDashboard() {
       </div>
 
       {modal && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:999, padding:"1rem" }}>
-          <div style={{ background:"#fff", borderRadius:14, padding:"2rem", maxWidth:460, width:"100%", border:"1px solid #e5e7eb" }}>
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", display:"flex", alignItems:"flex-end", justifyContent:"center", zIndex:999, padding:"0" }}>
+          <div className="ca-modal-card">
             <h3 style={{ color:NAVY, fontSize:17, fontWeight:800, marginBottom:4 }}>Express Interest</h3>
             <p style={{ color:"#6b7280", fontSize:13, marginBottom:"1.25rem" }}>{modal.title} · {modal.location}</p>
             <div style={{ marginBottom:12 }}>
