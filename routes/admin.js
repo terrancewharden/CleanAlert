@@ -32,7 +32,7 @@ router.get("/users", requireAuth, requireAdmin, async (req, res) => {
   const limit = 20;
   const offset = (page - 1) * limit;
   const { rows } = await pool.query(
-    "SELECT id,name,email,user_type,company_name,subscription_status,is_banned,created_at FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+    "SELECT id,name,email,user_type,company_name,subscription_status,scheduled_activation_date,trial_ends_at,is_banned,created_at FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2",
     [limit, offset]
   );
   res.json(rows);
@@ -92,6 +92,30 @@ router.patch("/notifications/:id", requireAuth, requireAdmin, async (req, res) =
   try {
     await pool.query("UPDATE admin_notifications SET is_read=true WHERE id=$1", [req.params.id]);
     res.json({ ok: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// PATCH /api/admin/users/:id/subscription — activate now, schedule, or cancel
+router.patch("/users/:id/subscription", requireAuth, requireAdmin, async (req, res) => {
+  const { action, scheduled_date } = req.body;
+  try {
+    let query, params;
+    if (action === "activate_now") {
+      query = "UPDATE users SET subscription_status='active', scheduled_activation_date=NULL, trial_ends_at=NULL WHERE id=$1 RETURNING id,name,email,subscription_status,scheduled_activation_date";
+      params = [req.params.id];
+    } else if (action === "schedule") {
+      if (!scheduled_date) return res.status(400).json({ error: "scheduled_date required" });
+      query = "UPDATE users SET scheduled_activation_date=$1 WHERE id=$2 RETURNING id,name,email,subscription_status,scheduled_activation_date";
+      params = [new Date(scheduled_date).toISOString(), req.params.id];
+    } else if (action === "cancel") {
+      query = "UPDATE users SET subscription_status='cancelled', scheduled_activation_date=NULL WHERE id=$1 RETURNING id,name,email,subscription_status,scheduled_activation_date";
+      params = [req.params.id];
+    } else {
+      return res.status(400).json({ error: "action must be activate_now | schedule | cancel" });
+    }
+    const { rows } = await pool.query(query, params);
+    if (!rows.length) return res.status(404).json({ error: "User not found" });
+    res.json(rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

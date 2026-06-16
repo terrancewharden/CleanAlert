@@ -72,11 +72,21 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
-    const { rows } = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
+    let { rows } = await pool.query("SELECT * FROM users WHERE email=$1", [email]);
     if (!rows.length) return res.status(401).json({ error: "Invalid credentials" });
-    const user = rows[0];
+    let user = rows[0];
     if (user.is_banned) return res.status(403).json({ error: "Account suspended" });
     if (!await bcrypt.compare(password, user.password_hash)) return res.status(401).json({ error: "Invalid credentials" });
+
+    // Auto-activate if scheduled_activation_date has passed
+    if (user.subscription_status !== "active" && user.scheduled_activation_date && new Date(user.scheduled_activation_date) <= new Date()) {
+      const { rows: updated } = await pool.query(
+        "UPDATE users SET subscription_status='active', scheduled_activation_date=NULL WHERE id=$1 RETURNING *",
+        [user.id]
+      );
+      user = updated[0];
+    }
+
     res.json({ token: sign(user), user: sanitize(user) });
   } catch (err) {
     res.status(500).json({ error: err.message });

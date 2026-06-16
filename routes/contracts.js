@@ -1,6 +1,7 @@
 import { Router } from "express";
 import pool from "../db/index.js";
 import { requireAuth, requireCleaner } from "../middleware/auth.js";
+import { emailNewBid, emailBidAccepted, emailAdminDealAlert } from "../lib/email.js";
 
 const router = Router();
 
@@ -97,6 +98,31 @@ router.post("/:id/respond", requireCleaner, async (req, res) => {
        RETURNING *`,
       [req.params.id, req.user.id, message, share_deal !== false]
     );
+
+    // Notify the buyer that a cleaner bid on their contract
+    try {
+      const { rows: [ct] } = await pool.query(
+        "SELECT c.buyer_id, c.business_name, u.name as buyer_name, u.email as buyer_email FROM contracts c JOIN users u ON c.buyer_id=u.id WHERE c.id=$1",
+        [req.params.id]
+      );
+      const cleanerName = req.user.name || "A cleaner";
+      const cleanerCompany = req.user.company_name || null;
+      // In-app notification
+      await pool.query(
+        `INSERT INTO user_notifications (user_id, type, title, body) VALUES ($1, 'new_bid', $2, $3)`,
+        [ct.buyer_id, `New bid on ${ct.business_name}`, `${cleanerName} submitted a bid. Review it in My Contracts.`]
+      );
+      // Email
+      emailNewBid({
+        buyerEmail: ct.buyer_email,
+        buyerName: ct.buyer_name,
+        businessName: ct.business_name,
+        cleanerName,
+        cleanerCompany,
+        bidMessage: message,
+      });
+    } catch (_) { /* notification failure shouldn't break the bid */ }
+
     res.json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -124,6 +150,15 @@ router.post("/:id/accept/:responseId", requireAuth, async (req, res) => {
     );
     await client.query("UPDATE contracts SET status='closed' WHERE id=$1", [req.params.id]);
 
+    // Notify the cleaner their bid was accepted
+    await client.query(
+      `INSERT INTO user_notifications (user_id, type, title, body)
+       VALUES ($1, 'bid_accepted', $2, $3)`,
+      [resp.cleaner_id,
+       `🎉 Your bid was accepted — ${contract.business_name}`,
+       `You landed the deal. Contact info and your messaging thread are now unlocked in My Active Contracts.`]
+    );
+
     // Fire admin notification
     await client.query(
       `INSERT INTO admin_notifications (type, deal_id, buyer_id, cleaner_id, detail)
@@ -133,6 +168,35 @@ router.post("/:id/accept/:responseId", requireAuth, async (req, res) => {
     );
 
     await client.query("COMMIT");
+
+    // Send emails after commit (non-blocking — failures won't roll back the deal)
+    try {
+      const [{ rows: [buyer] }, { rows: [cleaner] }] = await Promise.all([
+        pool.query("SELECT name, email, phone FROM users WHERE id=$1", [req.user.id]),
+        pool.query("SELECT name, email, phone, company_name FROM users WHERE id=$1", [resp.cleaner_id]),
+      ]);
+      emailBidAccepted({
+        cleanerEmail: cleaner.email,
+        cleanerName: cleaner.name,
+        businessName: contract.business_name,
+        buyerName: buyer.name,
+        buyerEmail: buyer.email,
+        buyerPhone: buyer.phone,
+      });
+      emailAdminDealAlert({
+        businessName: contract.business_name,
+        facilityType: contract.facility_type,
+        budget: contract.budget,
+        buyerName: buyer.name,
+        buyerEmail: buyer.email,
+        buyerPhone: buyer.phone,
+        cleanerName: cleaner.name,
+        cleanerEmail: cleaner.email,
+        cleanerPhone: cleaner.phone,
+        cleanerCompany: cleaner.company_name,
+      });
+    } catch (_) { /* email failure never breaks the deal */ }
+
     res.json(deal);
   } catch (err) {
     await client.query("ROLLBACK");

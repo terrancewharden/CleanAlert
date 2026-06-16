@@ -16,6 +16,8 @@ export default function Admin() {
   const [newCode, setNewCode] = useState({ code:"", trial_days:90, max_uses:"", note:"" });
   const [promoMsg, setPromoMsg] = useState("");
   const [notifications, setNotifications] = useState([]);
+  const [subAction, setSubAction] = useState({}); // { [userId]: { mode, date } }
+  const [subMsg, setSubMsg] = useState({});
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -62,6 +64,21 @@ export default function Admin() {
   const toggleBan = async (id, banned) => {
     await authFetch(`/api/admin/users/${id}/ban`, { method:"POST", body:JSON.stringify({is_banned:!banned}) });
     setUsers(u => u.map(x => x.id===id ? {...x, is_banned:!banned} : x));
+  };
+
+  const controlSub = async (userId, action) => {
+    const date = subAction[userId]?.date;
+    if (action === "schedule" && !date) {
+      setSubMsg(m=>({...m,[userId]:"Pick a date first."})); return;
+    }
+    const r = await authFetch(`/api/admin/users/${userId}/subscription`, {
+      method:"PATCH", body: JSON.stringify({ action, scheduled_date: date })
+    });
+    const d = await r.json();
+    if (d.error) { setSubMsg(m=>({...m,[userId]:`Error: ${d.error}`})); return; }
+    setUsers(u => u.map(x => x.id===userId ? {...x, subscription_status:d.subscription_status, scheduled_activation_date:d.scheduled_activation_date} : x));
+    setSubAction(m=>({...m,[userId]:{}}));
+    setSubMsg(m=>({...m,[userId]: action==="activate_now"?"✓ Activated" : action==="cancel"?"✓ Cancelled" : "✓ Scheduled"}));
   };
 
   const th = { color:"#6b7280", fontSize:12, fontWeight:600, textAlign:"left", padding:"0.6rem 0.75rem", borderBottom:"1px solid #e5e7eb", textTransform:"uppercase", letterSpacing:"0.05em" };
@@ -188,27 +205,74 @@ export default function Admin() {
           <div style={{ padding:"1rem 1.25rem", borderBottom:"1px solid #e5e7eb" }}>
             <span style={{ color:NAVY, fontSize:15, fontWeight:700 }}>Users</span>
           </div>
-          <div style={{ overflowX:"auto" }}>
-            <table style={{ width:"100%", borderCollapse:"collapse" }}>
-              <thead><tr>{["Name","Email","Type","Company","Sub Status","Joined",""].map(h=><th key={h} style={th}>{h}</th>)}</tr></thead>
-              <tbody>
-                {users.length===0
-                  ? <tr><td colSpan={7} style={{ ...td, color:"#9ca3af", textAlign:"center", padding:"2rem" }}>No users yet.</td></tr>
-                  : users.map(u=>(
-                    <tr key={u.id} style={{ opacity:u.is_banned?0.5:1 }}>
-                      <td style={td}>{u.name}</td>
-                      <td style={td}>{u.email}</td>
-                      <td style={td}>{u.user_type}</td>
-                      <td style={td}>{u.company_name||"—"}</td>
-                      <td style={td}>{u.subscription_status||"—"}</td>
-                      <td style={td}>{new Date(u.created_at).toLocaleDateString()}</td>
-                      <td style={td}><button onClick={()=>toggleBan(u.id,u.is_banned)} style={{ background:u.is_banned?"#dcfce7":"#fee2e2", color:u.is_banned?"#166534":"#dc2626", border:"none", borderRadius:4, padding:"4px 10px", fontSize:12, cursor:"pointer", fontWeight:600 }}>{u.is_banned?"Unban":"Ban"}</button></td>
-                    </tr>
-                  ))
-                }
-              </tbody>
-            </table>
-          </div>
+          {users.length===0
+            ? <div style={{ padding:"2rem", color:"#9ca3af", textAlign:"center", fontSize:13 }}>No users yet.</div>
+            : users.map(u=>(
+              <div key={u.id} style={{ borderBottom:"1px solid #f3f4f6", padding:"1rem 1.25rem", opacity:u.is_banned?0.5:1 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12, flexWrap:"wrap" }}>
+                  {/* User info */}
+                  <div style={{ flex:1, minWidth:160 }}>
+                    <div style={{ color:NAVY, fontWeight:700, fontSize:14 }}>{u.name} {u.company_name ? `· ${u.company_name}` : ""}</div>
+                    <div style={{ color:"#6b7280", fontSize:12 }}>{u.email} · {u.user_type}</div>
+                    <div style={{ marginTop:4, display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" }}>
+                      <span style={{ background: u.subscription_status==="active"?"#dcfce7": u.subscription_status==="trial"?"#fef9c3": u.subscription_status==="cancelled"?"#fee2e2":"#f3f4f6", color: u.subscription_status==="active"?"#166534": u.subscription_status==="trial"?"#92400e": u.subscription_status==="cancelled"?"#dc2626":"#6b7280", fontSize:10, padding:"2px 8px", borderRadius:4, fontWeight:700 }}>
+                        {(u.subscription_status||"inactive").toUpperCase()}
+                      </span>
+                      {u.scheduled_activation_date && (
+                        <span style={{ color:"#6b7280", fontSize:11 }}>⏰ Activates {new Date(u.scheduled_activation_date).toLocaleDateString()}</span>
+                      )}
+                      {u.trial_ends_at && u.subscription_status==="trial" && (
+                        <span style={{ color:"#92400e", fontSize:11 }}>Trial ends {new Date(u.trial_ends_at).toLocaleDateString()}</span>
+                      )}
+                      <span style={{ color:"#d1d5db", fontSize:11 }}>Joined {new Date(u.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  {/* Subscription controls — cleaners only */}
+                  {u.user_type === "cleaner" && (
+                    <div style={{ display:"flex", flexDirection:"column", gap:6, alignItems:"flex-end" }}>
+                      <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                        {u.subscription_status !== "active" && (
+                          <button onClick={()=>controlSub(u.id,"activate_now")} style={{ background:"#dcfce7", color:"#166534", border:"1px solid #bbf7d0", borderRadius:5, padding:"4px 10px", fontSize:11, fontWeight:700, cursor:"pointer" }}>
+                            ⚡ Activate Now
+                          </button>
+                        )}
+                        {u.subscription_status !== "cancelled" && (
+                          <button onClick={()=>controlSub(u.id,"cancel")} style={{ background:"#fee2e2", color:"#dc2626", border:"1px solid #fecaca", borderRadius:5, padding:"4px 10px", fontSize:11, fontWeight:700, cursor:"pointer" }}>
+                            ✕ Cancel Sub
+                          </button>
+                        )}
+                        <button onClick={()=>toggleBan(u.id,u.is_banned)} style={{ background:u.is_banned?"#f3f4f6":"#fff7ed", color:u.is_banned?"#374151":"#9a3412", border:`1px solid ${u.is_banned?"#e5e7eb":"#fed7aa"}`, borderRadius:5, padding:"4px 10px", fontSize:11, fontWeight:700, cursor:"pointer" }}>
+                          {u.is_banned?"Unban":"Ban"}
+                        </button>
+                      </div>
+
+                      {/* Schedule activation */}
+                      <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                        <input
+                          type="date"
+                          value={subAction[u.id]?.date||""}
+                          onChange={e=>setSubAction(m=>({...m,[u.id]:{...m[u.id],date:e.target.value}}))}
+                          style={{ fontSize:11, padding:"3px 6px", border:"1px solid #e5e7eb", borderRadius:4, color:"#374151", fontFamily:"'DM Sans',sans-serif" }}
+                        />
+                        <button onClick={()=>controlSub(u.id,"schedule")} style={{ background:"#f0f9ff", color:"#0369a1", border:"1px solid #bae6fd", borderRadius:5, padding:"4px 10px", fontSize:11, fontWeight:700, cursor:"pointer" }}>
+                          Schedule →
+                        </button>
+                      </div>
+                      {subMsg[u.id] && <div style={{ fontSize:11, color:subMsg[u.id].startsWith("✓")?"#166534":"#dc2626", fontWeight:600 }}>{subMsg[u.id]}</div>}
+                    </div>
+                  )}
+
+                  {/* Buyers: just ban control */}
+                  {u.user_type !== "cleaner" && u.user_type !== "admin" && (
+                    <button onClick={()=>toggleBan(u.id,u.is_banned)} style={{ background:u.is_banned?"#f3f4f6":"#fff7ed", color:u.is_banned?"#374151":"#9a3412", border:`1px solid ${u.is_banned?"#e5e7eb":"#fed7aa"}`, borderRadius:5, padding:"4px 10px", fontSize:11, fontWeight:700, cursor:"pointer", alignSelf:"flex-start" }}>
+                      {u.is_banned?"Unban":"Ban"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          }
         </div>
       </div>
     </div>

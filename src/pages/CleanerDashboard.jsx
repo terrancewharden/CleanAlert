@@ -127,6 +127,8 @@ export default function CleanerDashboard() {
   const [myContracts, setMyContracts] = useState([]);
   const [publicDeals, setPublicDeals] = useState([]);
   const [shared, setShared] = useState({});
+  const [notifs, setNotifs] = useState([]);
+  const [showNotifs, setShowNotifs] = useState(false);
   const [chatDeal, setChatDeal] = useState(null);
   const [messages, setMessages] = useState([]);
   const [msgInput, setMsgInput] = useState("");
@@ -137,9 +139,29 @@ export default function CleanerDashboard() {
 
   useEffect(()=>{
     loadFeed();
+    loadNotifs();
     const t = setInterval(loadFeed, 15000);
-    return ()=>clearInterval(t);
+    const n = setInterval(loadNotifs, 30000);
+    return ()=>{ clearInterval(t); clearInterval(n); };
   },[]);
+
+  const loadNotifs = async ()=>{
+    try {
+      const r = await authFetch("/api/notifications/mine");
+      const d = await r.json();
+      if(Array.isArray(d)) setNotifs(d);
+    } catch(e){}
+  };
+
+  const markNotifRead = async (id)=>{
+    await authFetch(`/api/notifications/${id}`, { method:"PATCH" });
+    setNotifs(n=>n.map(x=>x.id===id?{...x,is_read:true}:x));
+  };
+
+  const markAllRead = async ()=>{
+    await authFetch("/api/notifications/read-all", { method:"POST" });
+    setNotifs(n=>n.map(x=>({...x,is_read:true})));
+  };
 
   useEffect(()=>{
     if(tab==="mine") loadMine();
@@ -241,6 +263,37 @@ export default function CleanerDashboard() {
                 fontFamily:"'DM Sans',sans-serif"
               }}>{l}</button>
             ))}
+          </div>
+          {/* Notification bell */}
+          <div style={{ position:"relative" }}>
+            <button onClick={()=>setShowNotifs(v=>!v)} style={{ background:"transparent", border:`1px solid ${BORDER}`, borderRadius:6, padding:"6px 10px", cursor:"pointer", color:MUTED, fontSize:16, position:"relative" }}>
+              🔔
+              {notifs.filter(n=>!n.is_read).length > 0 && (
+                <span style={{ position:"absolute", top:-4, right:-4, background:"#ef4444", color:"#fff", fontSize:10, fontWeight:700, borderRadius:"50%", width:16, height:16, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  {notifs.filter(n=>!n.is_read).length}
+                </span>
+              )}
+            </button>
+            {showNotifs && (
+              <div style={{ position:"absolute", right:0, top:"calc(100% + 8px)", width:300, background:"#fff", borderRadius:10, border:"1px solid #e5e7eb", boxShadow:"0 8px 24px rgba(0,0,0,0.12)", zIndex:200, overflow:"hidden" }}>
+                <div style={{ padding:"0.75rem 1rem", borderBottom:"1px solid #f3f4f6", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                  <span style={{ color:NAVY, fontWeight:700, fontSize:13 }}>Notifications</span>
+                  {notifs.some(n=>!n.is_read) && <button onClick={markAllRead} style={{ background:"none", border:"none", color:CYAN, fontSize:12, cursor:"pointer", fontWeight:600 }}>Mark all read</button>}
+                </div>
+                <div style={{ maxHeight:320, overflowY:"auto" }}>
+                  {notifs.length===0
+                    ? <div style={{ padding:"1.5rem", textAlign:"center", color:"#9ca3af", fontSize:13 }}>Nothing yet</div>
+                    : notifs.map(n=>(
+                      <div key={n.id} onClick={()=>markNotifRead(n.id)} style={{ padding:"0.75rem 1rem", borderBottom:"1px solid #f9fafb", background:n.is_read?"#fff":"#f0f9ff", cursor:"pointer" }}>
+                        <div style={{ color:NAVY, fontSize:13, fontWeight:n.is_read?500:700 }}>{n.title}</div>
+                        {n.body && <div style={{ color:"#6b7280", fontSize:12, marginTop:2 }}>{n.body}</div>}
+                        <div style={{ color:"#d1d5db", fontSize:11, marginTop:3 }}>{new Date(n.created_at).toLocaleDateString()}</div>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
           </div>
           <button onClick={()=>{logout();nav("/");}} style={{ background:"transparent", color:MUTED, border:`1px solid ${BORDER}`, padding:"6px 12px", fontSize:13, cursor:"pointer", fontFamily:"'DM Sans',sans-serif" }}>Sign out</button>
         </div>
