@@ -237,7 +237,6 @@ export default function CleanerDashboard() {
           <div>
             <div style={{ marginBottom:"1.5rem" }}>
               <h2 style={{ color:"#fff", fontSize:18, fontWeight:800 }}>Deals Closed on CleanAlert</h2>
-              <p style={{ color:MUTED, fontSize:13, marginTop:4 }}>Real contracts. Real cleaners. Real money. 👀</p>
             </div>
             <div className="ca-deal-grid">
               {[...publicDeals.map(d=>({...d, isSeed:false})), ...SEED_WINS].map(w=>(
