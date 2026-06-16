@@ -7,9 +7,9 @@ import ContractCard from "../components/ContractCard.jsx";
 const NAVY="#0A1628", CYAN="#00D4FF", BORDER="#1e3a6e", MUTED="#6b8cba";
 
 const SEED_CARDS = [
-  { id:"seed-1", title:"3BR Apartment Deep Clean", category:"Deep Clean", location:"Center City, PA 19103", budget:"$180", preferred_date:"2026-06-18", description:"Need a thorough deep clean before new tenants move in. 3 bed 2 bath, ~1,400 sqft. Kitchen and bathrooms priority.", frequency:"One-time", isSeed:true },
-  { id:"seed-2", title:"Weekly Office Maintenance", category:"Commercial", location:"King of Prussia, PA 19406", budget:"$120/visit", preferred_date:"2026-06-20", description:"Small startup office, ~800 sqft. Kitchenette, bathrooms, common areas. Looking for reliable weekly cleaner.", frequency:"Weekly", isSeed:true },
-  { id:"seed-3", title:"Airbnb Turnover — Studio", category:"Airbnb/VRBO", location:"Fishtown, PA 19125", budget:"$95", preferred_date:"2026-06-17", description:"Quick turnovers between guests. Usually 2–4 hours. Need someone fast and detail-oriented.", frequency:"Bi-weekly", isSeed:true },
+  { id:"seed-1", business_name:"Trident Property Group", facility_type:"Office", location:"Center City, PA 19103", budget:"$1,200/mo", sqft:"3,200 sqft", frequency:"Weekly", contract_length:"1 year", notes:"3-floor office building. Need janitorial Mon–Fri. Breakrooms and restrooms are priority.", isSeed:true },
+  { id:"seed-2", business_name:"The Roost — Airbnb", facility_type:"Airbnb/VRBO", location:"Fishtown, PA 19125", budget:"$95/turnover", sqft:"850 sqft", frequency:"Bi-weekly", contract_length:"Ongoing", notes:"Studio loft, quick turnovers between guests. Usually 2–3 hours. Need someone reliable and fast.", isSeed:true },
+  { id:"seed-3", business_name:"Atlas Fitness Center", facility_type:"Gym/Fitness", location:"King of Prussia, PA 19406", budget:"$2,800/mo", sqft:"8,500 sqft", frequency:"Daily", contract_length:"6 months", notes:"Full gym facility. Evening cleaning crew needed. Locker rooms, weight floor, cardio area.", isSeed:true },
 ];
 
 const SEED_DEALS = [

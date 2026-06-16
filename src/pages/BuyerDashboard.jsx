@@ -5,7 +5,8 @@ import Logo from "../components/Logo.jsx";
 
 const NAVY="#0A1628", CYAN="#00D4FF", BORDER="#1e3a6e", MUTED="#6b8cba";
 
-const CATEGORIES=["Residential","Commercial","Airbnb/VRBO","Office","Post-Construction","Move-In/Move-Out","Deep Clean","Other"];
+const FACILITY_TYPES=["Office","Retail","Restaurant","Medical","Warehouse","Gym/Fitness","Airbnb/VRBO","Residential","Other"];
+const CONTRACT_LENGTHS=["30 days","3 months","6 months","1 year","Ongoing"];
 
 export default function BuyerDashboard() {
   const { user, authFetch, logout } = useAuth();
@@ -18,8 +19,9 @@ export default function BuyerDashboard() {
   const [msg, setMsg] = useState("");
 
   const [form, setForm] = useState({
-    title:"", category:"Residential", description:"", location:"",
-    budget:"", preferred_date:"", frequency:"One-time"
+    business_name:"", facility_type:"Office", notes:"", location:"",
+    zip:"", sqft:"", budget:"", frequency:"Weekly",
+    contract_length:"3 months", start_date:""
   });
 
   useEffect(() => {
@@ -59,7 +61,7 @@ export default function BuyerDashboard() {
       method:"POST", body: JSON.stringify(form)
     });
     const d = await r.json();
-    if (d.id) { setMsg("✓ Contract posted!"); setForm({title:"",category:"Residential",description:"",location:"",budget:"",preferred_date:"",frequency:"One-time"}); }
+    if (d.id) { setMsg("✓ Contract posted!"); setForm({business_name:"",facility_type:"Office",notes:"",location:"",zip:"",sqft:"",budget:"",frequency:"Weekly",contract_length:"3 months",start_date:""}); }
     else setMsg(d.error||"Something went wrong");
     setLoading(false);
   };
@@ -101,40 +103,56 @@ export default function BuyerDashboard() {
             <h2 style={{ color:"#fff", fontSize:20, fontWeight:800, marginBottom:"1.5rem" }}>Post a Cleaning Job</h2>
             <form onSubmit={submitContract} style={{ display:"grid", gap:16 }}>
               <div>
-                <label style={lbl}>Job Title</label>
-                <input style={inp} placeholder="e.g. 3BR apartment deep clean" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} required />
+                <label style={lbl}>Business / Property Name</label>
+                <input style={inp} placeholder="e.g. Center City Office Suite" value={form.business_name} onChange={e=>setForm({...form,business_name:e.target.value})} required />
               </div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                 <div>
-                  <label style={lbl}>Category</label>
-                  <select style={inp} value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>
-                    {CATEGORIES.map(c=><option key={c}>{c}</option>)}
+                  <label style={lbl}>Facility Type</label>
+                  <select style={inp} value={form.facility_type} onChange={e=>setForm({...form,facility_type:e.target.value})}>
+                    {FACILITY_TYPES.map(c=><option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div>
                   <label style={lbl}>Frequency</label>
                   <select style={inp} value={form.frequency} onChange={e=>setForm({...form,frequency:e.target.value})}>
-                    {["One-time","Weekly","Bi-weekly","Monthly"].map(f=><option key={f}>{f}</option>)}
+                    {["Daily","Weekly","Bi-weekly","Monthly","One-time"].map(f=><option key={f}>{f}</option>)}
                   </select>
                 </div>
               </div>
-              <div>
-                <label style={lbl}>Description</label>
-                <textarea style={{...inp,minHeight:90,resize:"vertical"}} placeholder="Describe what needs to be cleaned..." value={form.description} onChange={e=>setForm({...form,description:e.target.value})} required />
-              </div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                 <div>
-                  <label style={lbl}>Location / ZIP</label>
-                  <input style={inp} placeholder="Philadelphia, PA 19103" value={form.location} onChange={e=>setForm({...form,location:e.target.value})} required />
+                  <label style={lbl}>Contract Length</label>
+                  <select style={inp} value={form.contract_length} onChange={e=>setForm({...form,contract_length:e.target.value})}>
+                    {CONTRACT_LENGTHS.map(c=><option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={lbl}>Sq Footage</label>
+                  <input style={inp} placeholder="e.g. 2,500 sqft" value={form.sqft} onChange={e=>setForm({...form,sqft:e.target.value})} />
+                </div>
+              </div>
+              <div>
+                <label style={lbl}>Notes / Special Requirements</label>
+                <textarea style={{...inp,minHeight:90,resize:"vertical"}} placeholder="Describe what needs to be cleaned, any special requirements…" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} />
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:12 }}>
+                <div>
+                  <label style={lbl}>City / Address</label>
+                  <input style={inp} placeholder="Philadelphia, PA" value={form.location} onChange={e=>setForm({...form,location:e.target.value})} required />
+                </div>
+                <div>
+                  <label style={lbl}>ZIP</label>
+                  <input style={inp} placeholder="19103" value={form.zip} onChange={e=>setForm({...form,zip:e.target.value})} />
                 </div>
                 <div>
                   <label style={lbl}>Budget</label>
-                  <input style={inp} placeholder="$150" value={form.budget} onChange={e=>setForm({...form,budget:e.target.value})} />
+                  <input style={inp} placeholder="$800/mo" value={form.budget} onChange={e=>setForm({...form,budget:e.target.value})} />
                 </div>
               </div>
               <div>
-                <label style={lbl}>Preferred Date</label>
-                <input type="date" style={inp} value={form.preferred_date} onChange={e=>setForm({...form,preferred_date:e.target.value})} />
+                <label style={lbl}>Start Date</label>
+                <input type="date" style={inp} value={form.start_date} onChange={e=>setForm({...form,start_date:e.target.value})} />
               </div>
               {msg && <div style={{ color:msg.startsWith("✓")?"#4ade80":"#f87171", fontSize:13, fontWeight:600 }}>{msg}</div>}
               <button type="submit" disabled={loading} style={{ background:CYAN, color:NAVY, border:"none", borderRadius:8, padding:"0.85rem", fontSize:15, fontWeight:800, cursor:"pointer", letterSpacing:"0.01em" }}>

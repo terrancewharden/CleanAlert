@@ -49,18 +49,18 @@ router.post("/users/:id/ban", requireAuth, requireAdmin, async (req, res) => {
 router.get("/recent", requireAuth, requireAdmin, async (_req, res) => {
   try {
     const contractsResult = await pool.query(
-      `SELECT 'contract' as type, c.title as detail, u.name as actor, c.created_at
+      `SELECT 'contract' as type, c.business_name as detail, u.name as actor, c.created_at
        FROM contracts c JOIN users u ON c.buyer_id=u.id ORDER BY c.created_at DESC LIMIT 10`
     );
     let dealsRows = [];
     try {
       const dealsResult = await pool.query(
-        `SELECT 'deal' as type, c.title as detail, u.name as actor, r.created_at
+        `SELECT 'deal' as type, c.business_name as detail, u.name as actor, r.created_at
          FROM responses r JOIN contracts c ON r.contract_id=c.id JOIN users u ON r.cleaner_id=u.id
          WHERE r.status='accepted' ORDER BY r.created_at DESC LIMIT 10`
       );
       dealsRows = dealsResult.rows;
-    } catch (_) { /* deals/responses may be empty — skip */ }
+    } catch (_) { /* responses may be empty — skip */ }
     const activity = [...contractsResult.rows, ...dealsRows]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       .slice(0, 20);
